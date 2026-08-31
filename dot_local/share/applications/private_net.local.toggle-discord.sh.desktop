@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Toggle Discord
+Exec=$HOME/.local/bin/toggle-discord.sh
+Icon=discord
+NoDisplay=false
+StartupNotify=false
