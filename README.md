@@ -41,6 +41,7 @@ sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/in
 ### 1. 📦 البرامج الأساسية
 - `Discord`
 - `Asusctl`
+- `Easy Effects`
 ### 2. 🧩 ويدجيتس KDE Plasma
 - `Papirus-icon-theme`
 - `Vertical Clock`
