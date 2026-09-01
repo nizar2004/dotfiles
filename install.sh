@@ -46,7 +46,7 @@ print_banner
 
 # Step 1: System Packages 
 step "1/7" "Synchronizing System Packages & Widgets"
-sub "Installing discord, easyeffects, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
+sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
 sudo pacman -S --noconfirm --needed --quiet discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
 success "Essential packages ready"
 
@@ -158,23 +158,6 @@ success "Desktop environment fully reloaded"
 # Step 7: Create 'backup' command utility
 step "7/7" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
-
-sub "Configuring shell fish environment to prevent alias conflict..."
-FISH_CONFIG_DIR="$HOME/.config/fish"
-mkdir -p "$FISH_CONFIG_DIR"
-FISH_CONFIG_FILE="$FISH_CONFIG_DIR/config.fish"
-
-if [ -f "$FISH_CONFIG_FILE" ]; then
-    if ! grep -q "functions -e backup" "$FISH_CONFIG_FILE"; then
-        echo "" >> "$FISH_CONFIG_FILE"
-        echo "# Erase conflicting default backup function to prioritize local backup script" >> "$FISH_CONFIG_FILE"
-        echo "functions -e backup" >> "$FISH_CONFIG_FILE"
-    fi
-else
-    echo "# Erase conflicting default backup function to prioritize local backup script" > "$FISH_CONFIG_FILE"
-    echo "functions -e backup" >> "$FISH_CONFIG_FILE"
-fi
-
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh
 set -e
@@ -199,7 +182,7 @@ git push origin main
 echo "✔ Successfully backed up to GitHub!"
 EOF
 chmod +x "$HOME/.local/bin/backup"
-success "'backup' command is now active and CachyOS conflict resolved"
+success "'backup' command is now active"
 
 # Interactive: Install Necessary Apps
 printf "\n"
