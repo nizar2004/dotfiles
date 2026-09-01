@@ -129,7 +129,7 @@ DialogWidth=810
 
 [Containments][23][Applets][28][General]
 extraItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth
-hiddenItems=Arch-Update,tray-icon tray app clash-verge-rev-tray,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center
+hiddenItems=Arch-Update,tray-icon tray app clash-verge-rev-tray,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center,Cachy-Update
 knownItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.plasma.bluetooth
 
 [Containments][23][Applets][38]
