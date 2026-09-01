@@ -2,7 +2,7 @@
 
 # Nizar's Dotfiles & System Restore
 
-*السيستم ديال لينكس ديالي مقاد بطريقة احترافية باستخدام Chezmoi و Arch Linux.*
+*السيستم ديال لينكس ديالي مبني باش يبان مزيان ويسرّح الخدمة، مُقاد بـ Chezmoi على Arch Linux.*
 
 [![OS](https://img.shields.io/badge/OS-Arch_Linux-blue?logo=archlinux)](https://archlinux.org)
 [![Desktop](https://img.shields.io/badge/Desktop-KDE_Plasma_6-navy?logo=kde)](https://kde.org/plasma-desktop/)
@@ -18,7 +18,7 @@
 يلا بغيتي ترجع السيستم ديالك، البيكاز، الكونفيغراسيون، والشورتس فـ PC جديد ولا فـ Virtual Machine، دكّز على هاد الكوموند:
 
 ```bash
-sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/your-script-name.sh)"
+sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/install.sh)"
 
 ```
 
