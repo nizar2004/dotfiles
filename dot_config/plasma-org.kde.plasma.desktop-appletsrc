@@ -173,8 +173,8 @@ PreviewImage=/usr/share/wallpapers/cachyos-wallpapers/north.png
 SlidePaths=/usr/share/wallpapers/
 
 [Containments][43]
-ItemGeometries-2048x1280=
-ItemGeometriesHorizontal=
+ItemGeometries-2048x1280=Applet-63:352,112,272,272,0;
+ItemGeometriesHorizontal=Applet-63:352,112,272,272,0;
 activityId=e5599cb7-b951-4334-8080-392f97d45847
 formfactor=0
 immutability=1
@@ -182,6 +182,14 @@ lastScreen=0
 location=0
 plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.slideshow
+
+[Containments][43][Applets][63]
+immutability=1
+plugin=org.kde.plasma.analogclock
+
+[Containments][43][Applets][63][Configuration]
+popupHeight=400
+popupWidth=560
 
 [Containments][43][ConfigDialog]
 DialogHeight=630
