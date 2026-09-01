@@ -44,11 +44,21 @@ success() {
 
 print_banner
 
-# Step 1: System Packages
-step "1/7" "Synchronizing System Packages"
-sub "Installing discord, papirus-icon-theme, cargo, dbus..."
+# Step 1: System Packages 
+step "1/7" "Synchronizing System Packages & Widgets"
+sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
 sudo pacman -S --noconfirm --needed --quiet discord papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
 success "Essential packages ready"
+
+sub "Fetching Vertical Clock repository..."
+TEMP_CLOCK_DIR=$(mktemp -d)
+git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_CLOCK_DIR"
+
+sub "Registering Vertical Clock applet..."
+kpackagetool6 --type Plasma/Applet --install "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || \
+kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || true
+rm -rf "$TEMP_CLOCK_DIR"
+success "Vertical Clock widget installed"
 
 # Step 2: Advanced Separator Plasmoid
 step "2/7" "Installing Advanced Separator Widget"

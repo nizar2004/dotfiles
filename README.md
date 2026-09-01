@@ -2,7 +2,7 @@
 
 # Nizar's Dotfiles & System Restore
 
-*السيستم ديال لينكس ديالي مقاد بطريقة احترافية باستخدام Chezmoi و Arch Linux.*
+*السيستم ديال لينكس ديالي مبني باش يبان مزيان ويسرّح الخدمة، مُقاد بـ Chezmoi على Arch Linux.*
 
 [![OS](https://img.shields.io/badge/OS-Arch_Linux-blue?logo=archlinux)](https://archlinux.org)
 [![Desktop](https://img.shields.io/badge/Desktop-KDE_Plasma_6-navy?logo=kde)](https://kde.org/plasma-desktop/)
@@ -13,38 +13,49 @@
 
 ---
 
-## ⚡ تسطالاسيون فكوموند وحدة (One-Line Restore)
+## 📋 المختصر
 
-يلا بغيتي ترجع السيستم ديالك، البيكاز، الكونفيغراسيون، والشورتس فـ PC جديد ولا فـ Virtual Machine، دكّز على هاد الكوموند:
+This repo is a complete backup of my system — from terminal configs down to wallpapers and shortcuts — fully managed by Chezmoi. The idea is that whenever you set up Linux on a new PC or a Virtual Machine, you just run one command and your system gets set up exactly the way you like it.
 
+
+
+## ⚡ انسطالاسيون بكوموند وحدة
 ```bash
-sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/your-script-name.sh)"
-
+sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/install.sh)"
 ```
+## 🧱 شنو اللي لازم يكون عندك قبل ما تبدأ؟
+
+هاد الدوتفايلز كايخدمو غير فالتالي:
 
 
+| Thing | Version / Details |
+|---|---|
+| **Operating System** | Arch Linux (or any Arch-based distro like CachyOS) |
+| **Desktop** | KDE Plasma 6 |
 
----
 
-## 🛠️ أش كيقاد هاد السكريبت؟
+## 🛠️ شنو كيدور هاد السكريبت؟
 
-السكريبت كيدوز من هاد المراحل بالترتيب:
+السكريبت كيمشي على هاد المراحل بالترتيب:
 
-1. **البرامج الضرورية:** كيمسح وكيصاوب البرامج الأساسية بحال `discord`، `papirus-icon-theme`، `git`، و `cargo` عبر `pacman`.
-2. **ويجيتات ديسكتوب (KDE Plasma):** كيستالاسيو الويجيت ديال **Advanced Separator**.
-3. **أدوات النظام:** كيكومپيلي وكيحط أداة **`kdotool`** مباشرة من السورس.
-4. **الدوتفايلز (Chezmoi):** كيجيب ويطبق إعدادات التشغيل ديالك بطريقة أوتوماتيكية.
-5. **الكوارت والأختصار:** كيقاد السكريبتات ديال الديسكورد وكيفريزي الشورتكط `Meta+Shift+D`.
-6. **الخلفيات (Wallpapers):** كيسولك فالاخير واش بغيتي كلوْن الخلفيات ديال **Catppuccin Mocha** لـ `~/Pictures/wallpapers`.
+### 1. 📦 البرامج الأساسية
+- `Discord`
+- `Asusctl`
+### 2. 🧩 ويدجيتس KDE Plasma
+- `Papirus-icon-theme`
+- `Vertical Clock`
+- `Separator`
+### 3. 🔧 أدوات النظام (من السورس)
+كيكمبايلي ويحط **`kdotool`** — هاد الأداة مهمة باش تحكم فـ النوافذ من الترمينال (بحال `xdotool` ولا كن KDE).
 
----
+### 4. 📂 الدوتفايلز (Chezmoi)
+كيجيب الكونفيغ من الغيتهوب ويطبّقه مباشرة:
+- إعدادات **Fish** (الپرومپت، الألياسات، الفانكسيونات)
+- إعدادات **KDE** (شورتكطات، پانيل، ويندو رولز)
+- إعدادات التطبيقات الأخرى
 
-## 📁 مناش كيتكون هاد الريپو؟
+### 5. ⌨️ الأختصارات والسكريبتات
+- كيربط سكريبت **toggle-discord.sh** باش يخدم/يطفى ديسكورد بـ شورتكط `Meta+Shift+D`
 
-```text
-.
-├── install.sh         # السكريبت الرئيسي ديال التسطالاسيون
-├── toggle-discord.sh  # سكريبت مساعد باش تخدم/تطفى ديسكورد
-└── dot_*              # الكونفيغراسيونات والملفات اللي مسيّرين بـ Chezmoi
-
-```
+### 6. 🖼️ الخلفيات
+فـ الآخر كيسولك واش بغيتي تكلاوني الخلفيات ديال **Catppuccin Mocha** لـ `~/Pictures/wallpapers` — غير كتكتب `y` ولا `n`.
