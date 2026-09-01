@@ -47,7 +47,7 @@ print_banner
 # Step 1: System Packages 
 step "1/7" "Synchronizing System Packages & Widgets"
 sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
-sudo pacman -S --noconfirm --needed --quiet discord papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
+sudo pacman -S --noconfirm --needed --quiet discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
 success "Essential packages ready"
 
 sub "Fetching Vertical Clock repository..."

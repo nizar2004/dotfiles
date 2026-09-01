@@ -129,7 +129,7 @@ DialogWidth=810
 
 [Containments][23][Applets][28][General]
 extraItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth
-hiddenItems=Arch-Update,tray-icon tray app clash-verge-rev-tray,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center,Cachy-Update
+hiddenItems=Arch-Update,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center,Cachy-Update,tray-icon tray app clash-verge-rev-tray
 knownItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.plasma.bluetooth
 
 [Containments][23][Applets][39]
@@ -164,8 +164,29 @@ plugin=org.kde.plasma.panelspacer
 immutability=1
 plugin=org.kde.plasma.panelspacer
 
+[Containments][23][Applets][63]
+immutability=1
+plugin=luisbocanegra.advanced_separator
+
+[Containments][23][Applets][63][Configuration][General]
+initialized=true
+lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#013eff","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":1}
+
+[Containments][23][Applets][64]
+immutability=1
+plugin=com.github.kenansalar.plasma-gnome-pager
+
+[Containments][23][Applets][64][Configuration][Appearance]
+activeColor=200,200,200
+followThemeColors=false
+pillWidthFactor=4.2
+
+[Containments][23][Applets][64][Configuration][ConfigDialog]
+DialogHeight=630
+DialogWidth=810
+
 [Containments][23][General]
-AppletOrder=24;58;26;62;59;61;27;28;39
+AppletOrder=24;58;64;63;26;62;59;61;27;28;39
 
 [Containments][4][Wallpaper][org.kde.image][General]
 Image=/usr/share/wallpapers/cachyos-wallpapers/north.png
@@ -173,8 +194,8 @@ PreviewImage=/usr/share/wallpapers/cachyos-wallpapers/north.png
 SlidePaths=/usr/share/wallpapers/
 
 [Containments][43]
-ItemGeometries-2048x1280=Applet-60:1024,640,96,96,0;
-ItemGeometriesHorizontal=Applet-60:1024,640,96,96,0;
+ItemGeometries-2048x1280=
+ItemGeometriesHorizontal=
 activityId=e5599cb7-b951-4334-8080-392f97d45847
 formfactor=0
 immutability=1
@@ -183,16 +204,12 @@ location=0
 plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.slideshow
 
-[Containments][43][Applets][60]
-immutability=1
-plugin=org.kde.plasma.activitybar
-
 [Containments][43][ConfigDialog]
 DialogHeight=630
 DialogWidth=810
 
 [Containments][43][Wallpaper][org.kde.slideshow][General]
-Image=file:///home/nizar/Pictures/walls-catppuccin-mocha/railroad-cat.png
+Image=file:///home/nizar/Pictures/walls-catppuccin-mocha/street.png
 SlideInterval=300
 SlidePaths=/home/nizar/Pictures/walls-catppuccin-mocha/
 
