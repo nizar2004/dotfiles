@@ -158,6 +158,23 @@ success "Desktop environment fully reloaded"
 # Step 7: Create 'backup' command utility
 step "7/7" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
+
+sub "Configuring shell fish environment to prevent alias conflict..."
+FISH_CONFIG_DIR="$HOME/.config/fish"
+mkdir -p "$FISH_CONFIG_DIR"
+FISH_CONFIG_FILE="$FISH_CONFIG_DIR/config.fish"
+
+if [ -f "$FISH_CONFIG_FILE" ]; then
+    if ! grep -q "functions -e backup" "$FISH_CONFIG_FILE"; then
+        echo "" >> "$FISH_CONFIG_FILE"
+        echo "# Erase conflicting default backup function to prioritize local backup script" >> "$FISH_CONFIG_FILE"
+        echo "functions -e backup" >> "$FISH_CONFIG_FILE"
+    fi
+else
+    echo "# Erase conflicting default backup function to prioritize local backup script" > "$FISH_CONFIG_FILE"
+    echo "functions -e backup" >> "$FISH_CONFIG_FILE"
+fi
+
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh
 set -e
@@ -182,7 +199,7 @@ git push origin main
 echo "✔ Successfully backed up to GitHub!"
 EOF
 chmod +x "$HOME/.local/bin/backup"
-success "'backup' command is now active"
+success "'backup' command is now active and CachyOS conflict resolved"
 
 # Interactive: Install Necessary Apps
 printf "\n"
