@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# ── Graceful Exit on Ctrl+C ───────────────────────────────────
-cleanup() {
-    if [[ -n "$SPINNER_PID" ]]; then
-        kill "$SPINNER_PID" 2>/dev/null
-        wait "$SPINNER_PID" 2>/dev/null
-    fi
-    printf "\r%*s\r" 80 ""
-    printf "\n  %b✕%b %bCancelled by user%b\n\n" "$C_RED$C_BOLD" "$C_RESET" "$C_DIM" "$C_RESET"
-    exit 1
-}
-trap cleanup SIGINT
-
 # ── ANSI Colors & Styles ──────────────────────────────────────
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
@@ -22,7 +10,6 @@ C_GREEN='\033[1;32m'
 C_YELLOW='\033[1;33m'
 C_WHITE='\033[1;37m'
 C_GRAY='\033[0;90m'
-C_RED='\033[1;31m'
 
 # ── Progress Bar ──────────────────────────────────────────────
 TOTAL_STEPS=9
@@ -88,8 +75,7 @@ print_banner() {
   │   ██║ ╚████║██║███████║██║  ██║██║  ██║                     │
   │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                     │
   │                                                            │
-  │              ✦  ARCH LINUX · KDE PLASMA  ✦                 │
-  │                       by Nizar                             │
+  │                ✦  ARCH LINUX · KDE PLASMA  ✦               │
   │                                                            │
   ╰────────────────────────────────────────────────────────────╯
 BANNER
@@ -126,7 +112,7 @@ ask_prompt() {
 
 # ── Main ──────────────────────────────────────────────────────
 print_banner
-printf "  %b●%b %bInitializing workspace restore...%b\n" "$C_CYAN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "\n  %b●%b %bInitializing workspace restore...%b\n" "$C_CYAN" "$C_RESET" "$C_DIM" "$C_RESET"
 
 # Pre-authenticate sudo safely on the main thread
 printf "  %b⏳%b %bAuthenticating sudo (if required)...%b " "$C_YELLOW" "$C_RESET" "$C_DIM" "$C_RESET"
@@ -298,7 +284,7 @@ chmod +x "$HOME/.local/bin/backup"
 success "'backup' command is now available at ~/.local/bin/backup"
 step_done
 
-# Step 8: Interactive — Necessary Appsg
+# Step 8: Interactive — Necessary Apps
 step "8/9" "Optional — Install Necessary Apps"
 ask_prompt "Do you want to install your necessary apps?"
 if read -r REPLY </dev/tty; then
@@ -316,3 +302,53 @@ else
     info "Skipped"
 fi
 step_done
+
+# Step 9: Interactive — Wallpapers
+step "9/9" "Optional — Catppuccin Mocha Wallpapers"
+ask_prompt "Clone Catppuccin Mocha wallpapers to ~/Pictures/wallpapers?"
+if read -r REPLY </dev/tty; then
+    case "$REPLY" in
+        [yY][eE][sS]|[yY])
+            WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+            if [ -d "$WALLPAPER_DIR/.git" ]; then
+                sub "Repository exists — updating..."
+                git -C "$WALLPAPER_DIR" pull --quiet
+                success "Wallpapers updated"
+            else
+                mkdir -p "$HOME/Pictures"
+                rm -rf "$WALLPAPER_DIR"
+                start_spinner "Cloning wallpaper repository..."
+                git clone --depth 1 --quiet https://github.com/orangci/walls-catppuccin-mocha.git "$WALLPAPER_DIR" 2>/dev/null
+                stop_spinner "Wallpapers cloned to ~/Pictures/wallpapers"
+            fi
+            ;;
+        *)
+            info "Skipped"
+            ;;
+    esac
+else
+    info "Skipped"
+fi
+step_done
+
+# ── Completion Banner ─────────────────────────────────────────
+printf "\n"
+printf "  %b" "$C_CYAN"
+printf '─%.0s' {1..58}
+printf "%b\n" "$C_RESET"
+
+printf "\n  %b  ✨  RESTORE COMPLETE — WORKSPACE READY, NIZAR.  ✨%b\n\n" "$C_GREEN$C_BOLD" "$C_RESET"
+
+# Summary
+printf "  %b│%b  %bInstalled%b\n" "$C_GREEN" "$C_RESET" "$C_WHITE$C_BOLD" "$C_RESET"
+printf "  %b│%b    Vertical Clock widget%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "  %b│%b    Advanced Separator widget%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "  %b│%b    kdotool%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "  %b│%b    Chezmoi dotfiles%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "  %b│%b    Discord toggle (Meta+Shift+D)%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "  %b│%b    backup command%b\n" "$C_GREEN" "$C_RESET" "$C_DIM" "$C_RESET"
+printf "\n  %b│%b  %bTip:%b Run %bbackup%b anytime to sync dotfiles to GitHub%b\n" "$C_GREEN" "$C_RESET" "$C_YELLOW$C_BOLD" "$C_RESET" "$C_WHITE$C_BOLD" "$C_RESET" "$C_DIM" "$C_RESET"
+
+printf "\n  %b" "$C_CYAN"
+printf '─%.0s' {1..58}
+printf "%b\n\n" "$C_RESET"
