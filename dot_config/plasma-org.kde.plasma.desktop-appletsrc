@@ -164,8 +164,28 @@ plugin=org.kde.plasma.panelspacer
 immutability=1
 plugin=org.kde.plasma.panelspacer
 
+[Containments][23][Applets][63]
+immutability=1
+plugin=luisbocanegra.advanced_separator
+
+[Containments][23][Applets][63][Configuration][General]
+initialized=true
+lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#013eff","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":1}
+
+[Containments][23][Applets][65]
+immutability=1
+plugin=com.github.kenansalar.plasma-gnome-pager
+
+[Containments][23][Applets][65][Configuration][Appearance]
+activeColor=188,188,188
+followThemeColors=false
+
+[Containments][23][Applets][65][Configuration][ConfigDialog]
+DialogHeight=630
+DialogWidth=810
+
 [Containments][23][General]
-AppletOrder=24;58;26;62;59;61;27;28;39
+AppletOrder=24;58;65;63;26;62;59;61;27;28;39
 
 [Containments][4][Wallpaper][org.kde.image][General]
 Image=/usr/share/wallpapers/cachyos-wallpapers/north.png
@@ -182,15 +202,6 @@ lastScreen=0
 location=0
 plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.slideshow
-
-[Containments][43][Applets][63]
-immutability=1
-plugin=org.kde.plasma.analogclock
-transient=true
-
-[Containments][43][Applets][63][Configuration]
-popupHeight=400
-popupWidth=560
 
 [Containments][43][ConfigDialog]
 DialogHeight=630
