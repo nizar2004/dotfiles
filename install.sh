@@ -19,9 +19,9 @@ print_banner() {
   │   ███╗  ██╗██╗███████╗██████╗ ██████╗                      │
   │   ████╗ ██║██║╚══███╔╝██╔══██╗██╔══██╗                     │
   │   ██╔██╗██║██║  ███╔╝ ███████║██████╔╝                     │
-  │   ██║╚██╗██║██║ ███╔╝  ██╔══██║██╔══██╗                     │
-  │   ██║ ╚████║██║███████║██║  ██║██║  ██║                     │
-  │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                     │
+  │   ██║╚██╗██║██║ ███╔╝  ██╔══██║██╔══██╗                    │
+  │   ██║ ╚████║██║███████║██║  ██║██║  ██║                    │
+  │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                    │
   │                                                            │
   │                ✦ ARCH LINUX • KDE PLASMA ✦                 │
   │                                                            │
@@ -99,8 +99,8 @@ kquitapp6 plasmashell >/dev/null 2>&1 || true
 sleep 1
 
 if ! command -v chezmoi >/dev/null 2>&1; then
-    sub "Chezmoi not found. Installing chezmoi..."
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+    sub "Chezmoi not found. Installing chezmoi via pacman..."
+    sudo pacman -S --noconfirm --needed --quiet chezmoi >/dev/null 2>&1
     success "Chezmoi installed"
 else
     success "Chezmoi binary already present"
@@ -110,7 +110,8 @@ CHEZMOI_SRC="$(chezmoi source-path 2>/dev/null || echo "$HOME/.local/share/chezm
 
 if [ -d "$CHEZMOI_SRC/.git" ]; then
     sub "Dotfiles repository found. Pulling latest changes..."
-    git -C "$CHEZMOI_SRC" pull --quiet
+    # --rebase and --autostash prevents git from hanging on a merge message prompt
+    git -C "$CHEZMOI_SRC" pull --quiet --rebase --autostash || true
     chezmoi apply --force >/dev/null 2>&1
     success "Dotfiles updated and applied"
 else
