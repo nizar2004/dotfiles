@@ -225,8 +225,16 @@ plugin=org.kde.plasma.icon
 localPath=/home/nizar/.local/share/plasma_icons/steam.desktop
 url=desktop:/steam.desktop
 
+[Containments][45][Applets][68]
+immutability=1
+plugin=org.kde.plasma.icon
+
+[Containments][45][Applets][68][Configuration]
+localPath=/home/nizar/.local/share/plasma_icons/code.desktop
+url=file:///usr/share/applications/code.desktop
+
 [Containments][45][General]
-AppletOrder=46;67;48
+AppletOrder=46;67;68;48
 
 [Containments][66]
 ItemGeometries-1829x1143=
@@ -244,8 +252,17 @@ DialogHeight=630
 DialogWidth=810
 
 [Containments][66][Wallpaper][org.kde.slideshow][General]
-Image=file:///home/nizar/Pictures/wallpapers/misty-boat.jpg
+Image=file:///home/nizar/Pictures/wallpapers/castle.png
 SlidePaths=/home/nizar/Pictures/wallpapers/
+
+[Containments][69]
+activityId=2f294697-410c-4648-9672-83b8150f96de
+formfactor=0
+immutability=1
+lastScreen=1
+location=0
+plugin=org.kde.plasma.folder
+wallpaperplugin=org.kde.image
 
 [ScreenMapping]
 itemsOnDisabledScreens=
