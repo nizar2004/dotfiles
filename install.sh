@@ -55,10 +55,10 @@ draw_progress() {
     local empty=$((30 - filled))
     local bar=""
     local i
-    
+
     for ((i=0; i<filled; i++)); do bar+="█"; done
     for ((i=0; i<empty; i++)); do bar+="░"; done
-    
+
     local pct=$((current_step * 100 / TOTAL_STEPS))
     printf "\r  %b[%s]%b %b%3d%%%b" "$C_CYAN" "$bar" "$C_RESET" "$C_BOLD" "$pct" "$C_RESET"
 }
