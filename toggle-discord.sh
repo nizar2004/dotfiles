@@ -11,11 +11,11 @@ if [[ "${ACTIVE_CLASS,,}" == *"discord"* ]]; then
     # Discord is currently focused. Send the "X" (close) signal to push it to the tray.
     kdotool windowclose "$ACTIVE_WIN"
 else
-    # Discord is NOT focused. Try to find a visible Discord window.
+       # Discord is NOT focused. Find a matching Discord window.
     DISCORD_WIN=$(kdotool search --class "discord" | head -n 1)
 
     if [ -z "$DISCORD_WIN" ]; then
-        # No window exists (it's in the tray or completely closed). Launch it.
+           # No Discord window exists (it's in the tray or completely closed). Launch it.
         discord &
     else
         # A Discord window exists in the background. Bring it to the front.

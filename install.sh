@@ -167,8 +167,7 @@ printf "%b✔%b\n" "$C_GREEN$C_BOLD" "$C_RESET"
 # Step 1
 step "1/6" "Synchronizing System Packages & Widgets"
 sub "Installing Discord, Asusctl, KDE applets, Chezmoi, and build tools..."
-start_spinner "Downloading & installing packages..."
-sudo pacman -Syu --noconfirm --needed asusctl base-devel cargo chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf
+sudo pacman -Syu --noconfirm --needed asusctl base-devel chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf rust
 stop_spinner "Essential packages ready"
 
 sub "Fetching Vertical Clock repository..."
@@ -205,12 +204,12 @@ if ! command -v kdotool >/dev/null 2>&1; then
     git clone --quiet https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool"
     stop_spinner "Repository cloned"
 
-    start_spinner "Compiling with cargo (this may take a moment)..."
-    cargo build --release --manifest-path "$TEMP_DIR/kdotool/Cargo.toml"
-    sudo install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" /usr/local/bin/kdotool
+    start_spinner "Compiling with Rust (this may take a moment)..."
+    cargo build --quiet --release --manifest-path "$TEMP_DIR/kdotool/Cargo.toml"
+    install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" "$HOME/.local/bin/kdotool"
     rm -rf -- "$TEMP_DIR"
     TEMP_DIR=""
-    stop_spinner "kdotool binary compiled & installed"
+    stop_spinner "kdotool installed in ~/.local/bin"
 else
     info "kdotool already present — skipping build"
 fi
