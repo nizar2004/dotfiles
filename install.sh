@@ -1,5 +1,71 @@
 #!/bin/sh
-set -e
+set -eu
+
+die() {
+    printf 'Error: %s\n' "$1" >&2
+    exit 1
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
+}
+
+pacman_install() {
+    if [ "$(id -u)" -eq 0 ]; then
+        pacman -S --noconfirm --needed "$@"
+    else
+        sudo pacman -S --noconfirm --needed "$@"
+    fi
+}
+
+pacman_upgrade_install() {
+    if [ "$(id -u)" -eq 0 ]; then
+        pacman -Syu --noconfirm --needed "$@"
+    else
+        sudo pacman -Syu --noconfirm --needed "$@"
+    fi
+}
+
+TEMP_DIR=
+PLASMASHELL_STOPPED=0
+
+cleanup() {
+    if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+        rm -rf -- "$TEMP_DIR"
+    fi
+    if [ "$PLASMASHELL_STOPPED" -eq 1 ]; then
+        kstart plasmashell >/dev/null 2>&1 || true
+    fi
+}
+
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+
+new_temp_dir() {
+    TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install.XXXXXX") || die "Could not create a temporary directory"
+}
+
+ask_yes_no() {
+    REPLY=
+    if [ -r /dev/tty ] && read -r REPLY </dev/tty 2>/dev/null; then
+        case "$REPLY" in
+            [yY]|[yY][eE][sS]) return 0 ;;
+        esac
+    fi
+    return 1
+}
+
+[ -n "${HOME:-}" ] && [ -d "$HOME" ] || die "HOME is unset or does not point to a directory"
+require_command pacman
+require_command curl
+require_command mktemp
+require_command kpackagetool6
+require_command kquitapp6
+require_command kstart
+require_command kbuildsycoca6
+if [ "$(id -u)" -ne 0 ]; then
+    require_command sudo
+fi
 
 # ANSI Color Codes
 C_RESET='\033[0m'
@@ -11,7 +77,9 @@ C_WHITE='\033[1;37m'
 C_GRAY='\033[0;90m'
 
 print_banner() {
-    clear
+    if [ -t 1 ]; then
+        clear 2>/dev/null || true
+    fi
     printf "%b" "${C_MAGENTA}${C_BOLD}"
     cat << 'BANNER'
   ╭────────────────────────────────────────────────────────────╮
@@ -46,47 +114,49 @@ print_banner
 
 # Step 1: System Packages 
 step "1/7" "Synchronizing System Packages & Widgets"
-sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
-sudo pacman -S --noconfirm --needed --quiet discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
+sub "Installing discord, papirus-icon-theme, build tools, and dependencies..."
+pacman_upgrade_install discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus curl
+require_command git
 success "Essential packages ready"
 
 sub "Fetching Vertical Clock repository..."
-TEMP_CLOCK_DIR=$(mktemp -d)
-git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_CLOCK_DIR"
+new_temp_dir
+git clone --quiet --depth 1 https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_DIR/vertical-clock"
 
 sub "Registering Vertical Clock applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || true
-rm -rf "$TEMP_CLOCK_DIR"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/vertical-clock" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/vertical-clock"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=
 success "Vertical Clock widget installed"
 
 # Step 2: Advanced Separator Plasmoid
 step "2/7" "Installing Advanced Separator Widget"
-TEMP_WIDGET_DIR=$(mktemp -d)
+new_temp_dir
 sub "Fetching widget repository..."
-git clone --quiet https://github.com/luisbocanegra/plasma-advanced-separator.git "$TEMP_WIDGET_DIR"
+git clone --quiet --depth 1 https://github.com/luisbocanegra/plasma-advanced-separator.git "$TEMP_DIR/advanced-separator"
 
 sub "Registering Plasma applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || true
-
-PLASMOID_TARGET="$HOME/.local/share/plasma/plasmoids/luisbocanegra.advanced_separator"
-mkdir -p "$PLASMOID_TARGET"
-cp -rf "$TEMP_WIDGET_DIR"/* "$PLASMOID_TARGET/"
-rm -rf "$TEMP_WIDGET_DIR"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/advanced-separator" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/advanced-separator"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=
 success "Advanced Separator widget installed"
 
 # Step 3: kdotool
 step "3/7" "Verifying System Utilities"
 if ! command -v kdotool >/dev/null 2>&1; then
     sub "Building kdotool from source..."
-    TEMP_DIR=$(mktemp -d)
-    git clone --quiet https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool"
-    cd "$TEMP_DIR/kdotool"
-    cargo build --release --quiet
-    sudo install -Dm755 target/release/kdotool /usr/local/bin/kdotool
-    cd - > /dev/null
-    rm -rf "$TEMP_DIR"
+    new_temp_dir
+    git clone --quiet --depth 1 https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool"
+    (cd "$TEMP_DIR/kdotool" && cargo build --release --quiet)
+    if [ "$(id -u)" -eq 0 ]; then
+        install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" /usr/local/bin/kdotool
+    else
+        sudo install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" /usr/local/bin/kdotool
+    fi
+    rm -rf -- "$TEMP_DIR"
+    TEMP_DIR=
     success "kdotool binary compiled"
 else
     success "kdotool already present"
@@ -96,27 +166,26 @@ fi
 step "4/7" "Applying Chezmoi Dotfiles"
 sub "Stopping Plasmashell safely..."
 kquitapp6 plasmashell >/dev/null 2>&1 || true
-sleep 1
+PLASMASHELL_STOPPED=1
 
 if ! command -v chezmoi >/dev/null 2>&1; then
     sub "Chezmoi not found. Installing chezmoi via pacman..."
-    sudo pacman -S --noconfirm --needed --quiet chezmoi >/dev/null 2>&1
+    pacman_install chezmoi
     success "Chezmoi installed"
 else
     success "Chezmoi binary already present"
 fi
 
-CHEZMOI_SRC="$(chezmoi source-path 2>/dev/null || echo "$HOME/.local/share/chezmoi")"
+CHEZMOI_SRC=$(chezmoi source-path)
 
-if [ -d "$CHEZMOI_SRC/.git" ]; then
+if git -C "$CHEZMOI_SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     sub "Dotfiles repository found. Pulling latest changes..."
-    # --rebase and --autostash prevents git from hanging on a merge message prompt
-    git -C "$CHEZMOI_SRC" pull --quiet --rebase --autostash || true
-    chezmoi apply --force >/dev/null 2>&1
+    git -C "$CHEZMOI_SRC" pull --quiet --rebase --autostash
+    chezmoi apply
     success "Dotfiles updated and applied"
 else
     sub "Dotfiles repository not found. Initializing and downloading..."
-    chezmoi init --apply --force nizar2004 >/dev/null 2>&1
+    chezmoi init --apply nizar2004
     success "Dotfiles initialized and applied"
 fi
 
@@ -124,36 +193,37 @@ fi
 step "5/7" "Configuring Helpers & Hotkeys"
 mkdir -p "$HOME/.local/bin"
 sub "Fetching Discord toggle helper..."
-curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/toggle-discord.sh -o "$HOME/.local/bin/toggle-discord.sh"
+curl --fail --location --silent --show-error --retry 3 https://raw.githubusercontent.com/nizar2004/dotfiles/main/toggle-discord.sh -o "$HOME/.local/bin/toggle-discord.sh"
 chmod +x "$HOME/.local/bin/toggle-discord.sh"
 
 sub "Creating application desktop entry..."
 mkdir -p "$HOME/.local/share/applications"
-cat << 'DESK' > "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop"
-[Desktop Entry]
-Type=Application
-Name=Toggle Discord
-Exec=$HOME/.local/bin/toggle-discord.sh
-Icon=discord
-NoDisplay=false
-StartupNotify=false
-DESK
+printf '[Desktop Entry]\nType=Application\nName=Toggle Discord\nExec="%s"\nIcon=discord\nNoDisplay=false\nStartupNotify=false\n' \
+    "$HOME/.local/bin/toggle-discord.sh" > "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop"
 
 sub "Registering Meta+Shift+D shortcut service..."
-pkill -9 kglobalaccel6 || true
-KGLOBLALRC="$HOME/.config/kglobalshortcutsrc"
-sed -i '/net.local.toggle-discord/d' "$KGLOBLALRC" 2>/dev/null || true
-echo "" >> "$KGLOBLALRC"
-echo "[services][net.local.toggle-discord.sh.desktop]" >> "$KGLOBLALRC"
-echo "_launch=Meta+Shift+D" >> "$KGLOBLALRC"
+KGLOBALRC="$HOME/.config/kglobalshortcutsrc"
+mkdir -p "$HOME/.config"
+: >> "$KGLOBALRC"
+SHORTCUT_SECTION='[services][net.local.toggle-discord.sh.desktop]'
+SHORTCUT_TMP=$(mktemp "${KGLOBALRC}.XXXXXX")
+awk -v target="$SHORTCUT_SECTION" '
+    $0 == target { skip = 1; next }
+    /^\[/ { skip = 0 }
+    !skip { print }
+' "$KGLOBALRC" > "$SHORTCUT_TMP"
+printf '\n%s\n_launch=Meta+Shift+D\n' "$SHORTCUT_SECTION" >> "$SHORTCUT_TMP"
+mv "$SHORTCUT_TMP" "$KGLOBALRC"
+kquitapp6 kglobalaccel >/dev/null 2>&1 || true
 success "Shortcuts & helper scripts active"
 
 # Step 6: Reload desktop daemons
 step "6/7" "Restoring KDE Plasma Environment"
 sub "Updating system service cache..."
-kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+kbuildsycoca6 --noincremental
 sub "Restarting Plasmashell..."
-kstart plasmashell >/dev/null 2>&1 &
+kstart plasmashell
+PLASMASHELL_STOPPED=0
 success "Desktop environment fully reloaded"
 
 # Step 7: Create 'backup' command utility
@@ -185,47 +255,29 @@ EOF
 chmod +x "$HOME/.local/bin/backup"
 success "'backup' command is now active"
 
-# Interactive: Install Necessary Apps
-printf "\n"
-printf "\033[1;36mDo you want to install your necessary apps? (y/N): \033[0m"
-if read -r REPLY </dev/tty; then
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            sub "Installing necessary apps..."
-            sudo pacman -S --noconfirm --needed --quiet asusctl >/dev/null 2>&1
-            success "Completed!"
-            ;;
-        *)
-            sub "Skipping install necessary apps."
-            ;;
-    esac
-else
-    sub "Skipping install necessary apps."
-fi
-
 # Interactive Wallpaper Prompt
 printf "\n"
 printf "\033[1;36mDo you want to clone Catppuccin Mocha wallpapers to ~/Pictures/wallpapers? (y/N): \033[0m"
-if read -r REPLY </dev/tty; then
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            WALLPAPER_DIR="$HOME/Pictures/wallpapers"
-            if [ -d "$WALLPAPER_DIR/.git" ]; then
-                sub "Updating Catppuccin Mocha wallpapers repository..."
-                git -C "$WALLPAPER_DIR" pull --progress
-                success "Wallpapers repository updated"
-            else
-                mkdir -p "$HOME/Pictures"
-                rm -rf "$WALLPAPER_DIR"
-                sub "Cloning Catppuccin Mocha wallpapers (showing live download progress)..."
-                git clone --depth 1 --progress https://github.com/orangci/walls-catppuccin-mocha.git "$WALLPAPER_DIR"
-                success "Wallpapers repository cloned"
-            fi
-            ;;
-        *)
-            sub "Skipping wallpaper repository setup."
-            ;;
-    esac
+if ask_yes_no; then
+    WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+    WALLPAPER_URL=https://github.com/orangci/walls-catppuccin-mocha.git
+    if [ -d "$WALLPAPER_DIR" ] && \
+        [ "$(git -C "$WALLPAPER_DIR" remote get-url origin 2>/dev/null || true)" = "$WALLPAPER_URL" ]; then
+        sub "Updating Catppuccin Mocha wallpapers repository..."
+        git -C "$WALLPAPER_DIR" pull --ff-only --progress
+        success "Wallpapers repository updated"
+    elif [ -e "$WALLPAPER_DIR" ]; then
+        sub "The wallpaper path already exists and is not the expected repository; leaving it untouched."
+    else
+        mkdir -p "$HOME/Pictures"
+        new_temp_dir
+        sub "Cloning Catppuccin Mocha wallpapers (showing live download progress)..."
+        git clone --depth 1 --progress "$WALLPAPER_URL" "$TEMP_DIR/wallpapers"
+        mv "$TEMP_DIR/wallpapers" "$WALLPAPER_DIR"
+        rm -rf -- "$TEMP_DIR"
+        TEMP_DIR=
+        success "Wallpapers repository cloned"
+    fi
 else
     sub "Skipping wallpaper repository setup."
 fi
