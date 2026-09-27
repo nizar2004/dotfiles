@@ -12,7 +12,7 @@ if [[ "${ACTIVE_CLASS,,}" == *"discord"* ]]; then
     kdotool windowclose "$ACTIVE_WIN"
 else
     # Discord is NOT focused. Try to find a visible Discord window.
-    DISCORD_WIN=$(kdotool search --onlyvisible --class "discord" | head -n 1)
+    DISCORD_WIN=$(kdotool search --class "discord" | head -n 1)
 
     if [ -z "$DISCORD_WIN" ]; then
         # No window exists (it's in the tray or completely closed). Launch it.

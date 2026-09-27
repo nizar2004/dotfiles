@@ -1,16 +1,37 @@
 #!/bin/bash
+set -Eeuo pipefail
 
-# ── Graceful Exit on Ctrl+C ───────────────────────────────────
+# ── Graceful cleanup and error reporting ──────────────────────
+TEMP_DIR=""
+SPINNER_PID=""
+
 cleanup() {
     if [[ -n "$SPINNER_PID" ]]; then
-        kill "$SPINNER_PID" 2>/dev/null
-        wait "$SPINNER_PID" 2>/dev/null
+        kill "$SPINNER_PID" 2>/dev/null || true
+        wait "$SPINNER_PID" 2>/dev/null || true
+        SPINNER_PID=""
     fi
-    printf "\r%*s\r" 80 ""
-    printf "\n  %b✕%b %bCancelled by user%b\n\n" "$C_RED$C_BOLD" "$C_RESET" "$C_DIM" "$C_RESET"
-    exit 1
+    if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+        rm -rf -- "$TEMP_DIR" 2>/dev/null || true
+    fi
 }
-trap cleanup SIGINT
+
+handle_error() {
+    local status=$?
+    stop_spinner ""
+    printf "\n  %b✕%b Installer stopped at line %s (exit %s): %s\n" \
+        "$C_RED$C_BOLD" "$C_RESET" "$1" "$status" "$2" >&2
+    exit "$status"
+}
+
+cancelled() {
+    stop_spinner ""
+    printf "\n  %b✕%b %bCancelled by user%b\n\n" "$C_RED$C_BOLD" "$C_RESET" "$C_DIM" "$C_RESET"
+    exit 130
+}
+trap cleanup EXIT
+trap cancelled SIGINT TERM
+trap 'handle_error "$LINENO" "$BASH_COMMAND"' ERR
 
 # ── ANSI Colors & Styles ──────────────────────────────────────
 C_RESET='\033[0m'
@@ -25,11 +46,11 @@ C_GRAY='\033[0;90m'
 C_RED='\033[1;31m'
 
 # ── Progress Bar ──────────────────────────────────────────────
-TOTAL_STEPS=9
+TOTAL_STEPS=6
 current_step=0
 
 draw_progress() {
-    ((current_step++))
+    ((current_step += 1))
     local filled=$((current_step * 30 / TOTAL_STEPS))
     local empty=$((30 - filled))
     local bar=""
@@ -43,15 +64,13 @@ draw_progress() {
 }
 
 # ── Robust Spinner ────────────────────────────────────────────
-SPINNER_PID=""
-
 stop_spinner() {
     if [[ -n "$SPINNER_PID" ]]; then
-        kill "$SPINNER_PID" 2>/dev/null
-        wait "$SPINNER_PID" 2>/dev/null
+        kill "$SPINNER_PID" 2>/dev/null || true
+        wait "$SPINNER_PID" 2>/dev/null || true
         SPINNER_PID=""
     fi
-    
+
     if [[ -z "$1" ]]; then
         printf "\r%*s\r" 80 ""
     else
@@ -61,17 +80,15 @@ stop_spinner() {
 
 start_spinner() {
     stop_spinner ""
-    
-    coproc SPINNER {
-        local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
-        local i=0
+    (
+        frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+        i=0
         while true; do
             printf "\r  %b%s%b %s" "$C_YELLOW" "${frames[$((i++ % 10))]}" "$C_RESET" "$1" > /dev/tty
             sleep 0.08
         done
-    } 2>/dev/null
-        
-    SPINNER_PID=$SPINNER_PID
+    ) 2>/dev/null &
+    SPINNER_PID=$!
 }
 
 # ── Print Helpers ─────────────────────────────────────────────
@@ -119,14 +136,28 @@ step_done() {
     printf "  %b└─%b %bDone%b\n" "$C_CYAN" "$C_RESET" "$C_GREEN$C_BOLD" "$C_RESET"
 }
 
-ask_prompt() {
-    printf "\n  %b?%b %b%s%b " "$C_YELLOW$C_BOLD" "$C_RESET" "$C_WHITE$C_BOLD" "$1" "$C_RESET"
-    printf "%b[y/N]%b " "$C_DIM" "$C_RESET"
-}
-
 # ── Main ──────────────────────────────────────────────────────
 print_banner
 printf "  %b●%b %bInitializing workspace restore...%b\n" "$C_CYAN" "$C_RESET" "$C_DIM" "$C_RESET"
+
+if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+    printf "Run this installer as your regular user, not as root. It will use sudo when needed.\n" >&2
+    exit 1
+fi
+command -v pacman >/dev/null
+command -v sudo >/dev/null
+if [[ ${KDE_SESSION_VERSION:-} != 6 ]]; then
+    printf "Run this installer from a logged-in KDE Plasma 6 session.\n" >&2
+    exit 1
+fi
+for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 plasmashell; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        printf "Required KDE command is missing: %s. Install or repair Plasma 6 first.\n" "$command_name" >&2
+        exit 1
+    fi
+done
+
+export PATH="$HOME/.local/bin:$PATH"
 
 # Pre-authenticate sudo safely on the main thread
 printf "  %b⏳%b %bAuthenticating sudo (if required)...%b " "$C_YELLOW" "$C_RESET" "$C_DIM" "$C_RESET"
@@ -134,142 +165,100 @@ sudo -v
 printf "%b✔%b\n" "$C_GREEN$C_BOLD" "$C_RESET"
 
 # Step 1
-step "1/9" "Synchronizing System Packages & Widgets"
-sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
+step "1/6" "Synchronizing System Packages & Widgets"
+sub "Installing Discord, Asusctl, KDE applets, Chezmoi, and build tools..."
 start_spinner "Downloading & installing packages..."
-sudo pacman -S --noconfirm --needed --quiet discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
+sudo pacman -Syu --noconfirm --needed asusctl base-devel cargo chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf
 stop_spinner "Essential packages ready"
 
 sub "Fetching Vertical Clock repository..."
-TEMP_CLOCK_DIR=$(mktemp -d)
+TEMP_DIR=$(mktemp -d)
 start_spinner "Cloning plasma-vertical-clock..."
-git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_CLOCK_DIR" >/dev/null 2>&1
+git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_DIR/plasma-vertical-clock"
 stop_spinner "Repository cloned"
 
 sub "Registering Vertical Clock applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || true
-rm -rf "$TEMP_CLOCK_DIR"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/plasma-vertical-clock/vertical-clock.plasmoid" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/plasma-vertical-clock/vertical-clock.plasmoid"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=""
 success "Vertical Clock widget installed"
+
+sub "Installing Plasma Gnome Pager..."
+TEMP_DIR=$(mktemp -d)
+start_spinner "Cloning plasma-gnome-pager..."
+git clone --quiet https://github.com/KenanSalar/plasma-gnome-pager.git "$TEMP_DIR/plasma-gnome-pager"
+stop_spinner "Repository cloned"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/plasma-gnome-pager/package" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/plasma-gnome-pager/package"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=""
+success "Plasma Gnome Pager installed"
 step_done
 
 # Step 2
-step "2/9" "Installing Advanced Separator Widget"
-TEMP_WIDGET_DIR=$(mktemp -d)
-sub "Fetching widget repository..."
-start_spinner "Cloning plasma-advanced-separator..."
-git clone --quiet https://github.com/luisbocanegra/plasma-advanced-separator.git "$TEMP_WIDGET_DIR" >/dev/null 2>&1
-stop_spinner "Repository cloned"
-
-sub "Registering Plasma applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || true
-
-PLASMOID_TARGET="$HOME/.local/share/plasma/plasmoids/luisbocanegra.advanced_separator"
-mkdir -p "$PLASMOID_TARGET"
-cp -rf "$TEMP_WIDGET_DIR"/* "$PLASMOID_TARGET/"
-rm -rf "$TEMP_WIDGET_DIR"
-success "Advanced Separator widget installed"
-step_done
-
-# Step 3
-step "3/9" "Verifying System Utilities"
+step "2/6" "Verifying System Utilities"
 if ! command -v kdotool >/dev/null 2>&1; then
     sub "Building kdotool from source..."
     TEMP_DIR=$(mktemp -d)
     start_spinner "Cloning kdotool..."
-    git clone --quiet https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool" >/dev/null 2>&1
+    git clone --quiet https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool"
     stop_spinner "Repository cloned"
 
     start_spinner "Compiling with cargo (this may take a moment)..."
-    cd "$TEMP_DIR/kdotool" || exit 1
-    cargo build --release --quiet 2>/dev/null
-    sudo install -Dm755 target/release/kdotool /usr/local/bin/kdotool
-    cd - > /dev/null
-    rm -rf "$TEMP_DIR"
+    cargo build --release --manifest-path "$TEMP_DIR/kdotool/Cargo.toml"
+    sudo install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" /usr/local/bin/kdotool
+    rm -rf -- "$TEMP_DIR"
+    TEMP_DIR=""
     stop_spinner "kdotool binary compiled & installed"
 else
     info "kdotool already present — skipping build"
 fi
 step_done
 
-# Step 4
-step "4/9" "Applying Chezmoi Dotfiles"
+# Step 3
+step "3/6" "Applying Chezmoi Dotfiles"
 sub "Stopping Plasmashell safely..."
 kquitapp6 plasmashell >/dev/null 2>&1 || true
 sleep 1
 success "Plasmashell stopped"
 
-if ! command -v chezmoi >/dev/null 2>&1; then
-    sub "Chezmoi not found — installing..."
-    start_spinner "Downloading chezmoi..."
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" >/dev/null 2>&1
-    stop_spinner "Chezmoi installed"
-else
-    info "Chezmoi binary already present"
-fi
-
-CHEZMOI_SRC="$(chezmoi source-path 2>/dev/null || echo "$HOME/.local/share/chezmoi")"
+CHEZMOI_SRC="$(chezmoi source-path)"
 
 if [ -d "$CHEZMOI_SRC/.git" ]; then
     sub "Dotfiles repository found — pulling latest changes..."
     start_spinner "Syncing dotfiles..."
-    git -C "$CHEZMOI_SRC" pull --quiet 2>/dev/null
-    chezmoi apply --force >/dev/null 2>&1
+    git -C "$CHEZMOI_SRC" pull --ff-only
+    chezmoi apply --force
     stop_spinner "Dotfiles updated and applied"
 else
     sub "No dotfiles repository found — initializing..."
     start_spinner "Cloning & applying dotfiles from nizar2004..."
-    chezmoi init --apply --force nizar2004 >/dev/null 2>&1
+    chezmoi init --apply --force nizar2004
     stop_spinner "Dotfiles initialized and applied"
 fi
 step_done
 
-# Step 5
-step "5/9" "Configuring Helpers & Hotkeys"
-mkdir -p "$HOME/.local/bin"
-sub "Fetching Discord toggle helper..."
-start_spinner "Downloading toggle-discord.sh..."
-curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/toggle-discord.sh -o "$HOME/.local/bin/toggle-discord.sh" 2>/dev/null
-chmod +x "$HOME/.local/bin/toggle-discord.sh"
-stop_spinner "Helper script downloaded"
-
-sub "Creating application desktop entry..."
-mkdir -p "$HOME/.local/share/applications"
-cat << 'DESK' > "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop"
-[Desktop Entry]
-Type=Application
-Name=Toggle Discord
-Exec=$HOME/.local/bin/toggle-discord.sh
-Icon=discord
-NoDisplay=false
-StartupNotify=false
-DESK
-success "Desktop entry created"
-
-sub "Registering Meta+Shift+D shortcut service..."
-pkill -9 kglobalaccel6 2>/dev/null || true
-KGLOBLALRC="$HOME/.config/kglobalshortcutsrc"
-sed -i '/net.local.toggle-discord/d' "$KGLOBLALRC" 2>/dev/null || true
-echo "" >> "$KGLOBLALRC"
-echo "[services][net.local.toggle-discord.sh.desktop]" >> "$KGLOBLALRC"
-echo "_launch=Meta+Shift+D" >> "$KGLOBLALRC"
-success "Meta+Shift+D shortcut registered"
+# Step 4
+step "4/6" "Verifying Managed Helpers & Hotkeys"
+[[ -x "$HOME/.local/bin/toggle-discord.sh" ]]
+[[ -f "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop" ]]
+success "Discord helper and Meta+Shift+D shortcut applied from chezmoi"
 step_done
 
-# Step 6
-step "6/9" "Restoring KDE Plasma Environment"
+# Step 5
+step "5/6" "Restoring KDE Plasma Environment"
 sub "Updating system service cache..."
-kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+kbuildsycoca6 --noincremental
 success "Service cache rebuilt"
 
 sub "Restarting Plasmashell..."
-kstart plasmashell >/dev/null 2>&1 &
+plasmashell --replace >/dev/null 2>&1 &
 success "Desktop environment reloaded"
 step_done
 
-# Step 7
-step "7/9" "Setting up 'backup' command utility"
+# Step 6
+step "6/6" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh
@@ -283,36 +272,17 @@ chezmoi re-add
 echo "Committing and pushing to GitHub..."
 cd "$CHEZMOI_SRC"
 
-if git diff-index --quiet HEAD --; then
+git add -- .
+if git diff --cached --quiet; then
     echo "No new changes to backup."
     exit 0
 fi
 
-git add .
 git commit -m "Auto-backup workspace: $(date +'%Y-%m-%d %H:%M:%S')"
-git push origin main
+git push
 
 echo "✔ Successfully backed up to GitHub!"
 EOF
 chmod +x "$HOME/.local/bin/backup"
 success "'backup' command is now available at ~/.local/bin/backup"
-step_done
-
-# Step 8: Interactive — Necessary Appsg
-step "8/9" "Optional — Install Necessary Apps"
-ask_prompt "Do you want to install your necessary apps?"
-if read -r REPLY </dev/tty; then
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            start_spinner "Installing necessary apps..."
-            sudo pacman -S --noconfirm --needed --quiet asusctl >/dev/null 2>&1
-            stop_spinner "Necessary apps installed"
-            ;;
-        *)
-            info "Skipped"
-            ;;
-    esac
-else
-    info "Skipped"
-fi
 step_done
