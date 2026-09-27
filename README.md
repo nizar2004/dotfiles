@@ -15,13 +15,13 @@
 
 ## 📋 المختصر
 
-This repo is a complete backup of my system — from terminal configs down to wallpapers and shortcuts — fully managed by Chezmoi. The idea is that whenever you set up Linux on a new PC or a Virtual Machine, you just run one command and your system gets set up exactly the way you like it.
+This repository restores my saved KDE Plasma configuration and helper tools with Chezmoi, and installs the packages and widgets used by that setup.
 
 
 
 ## ⚡ انسطالاسيون بكوموند وحدة
 ```bash
-sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/install.sh)"
+bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotfiles/main/install.sh | bash'
 ```
 ## 🧱 شنو اللي لازم يكون عندك قبل ما تبدأ؟
 
@@ -32,30 +32,13 @@ sh -c "$(curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/in
 |---|---|
 | **Operating System** | Arch Linux (or any Arch-based distro like CachyOS) |
 | **Desktop** | KDE Plasma 6 |
+| **Session** | Run from a logged-in Plasma 6 desktop as a regular user with `sudo` access |
 
 
-## 🛠️ شنو كيدور هاد السكريبت؟
+## شنو كيدير السكريبت؟
+- كيدير تحديث للنظام وكيثبّت `Discord`، `Asusctl`، `KDE Connect`، `Materia KDE`، `Papirus`، وملحقات Plasma وأدوات البناء.
+- كيثبّت ويدجت Vertical Clock وPlasma Gnome Pager، وكيسترجع إعدادات Plasma والـ Advanced Separator من ملفات Chezmoi.
+- كيبني `kdotool` إلا ما كانش مثبت.
+- كيطّبق إعدادات الاختصارات والـ Discord helper، وكيجهّز أمر `backup`.
 
-السكريبت كيمشي على هاد المراحل بالترتيب:
-
-### 1. 📦 البرامج الأساسية
-- `Discord`
-- `Asusctl`
-### 2. 🧩 ويدجيتس KDE Plasma
-- `Papirus-icon-theme`
-- `Vertical Clock`
-- `Separator`
-### 3. 🔧 أدوات النظام (من السورس)
-كيكمبايلي ويحط **`kdotool`** — هاد الأداة مهمة باش تحكم فـ النوافذ من الترمينال (بحال `xdotool` ولا كن KDE).
-
-### 4. 📂 الدوتفايلز (Chezmoi)
-كيجيب الكونفيغ من الغيتهوب ويطبّقه مباشرة:
-- إعدادات **Fish** (الپرومپت، الألياسات، الفانكسيونات)
-- إعدادات **KDE** (شورتكطات، پانيل، ويندو رولز)
-- إعدادات التطبيقات الأخرى
-
-### 5. ⌨️ الأختصارات والسكريبتات
-- كيربط سكريبت **toggle-discord.sh** باش يخدم/يطفى ديسكورد بـ شورتكط `Meta+Shift+D`
-
-### 6. 🖼️ الخلفيات
-فـ الآخر كيسولك واش بغيتي تكلاوني الخلفيات ديال **Catppuccin Mocha** لـ `~/Pictures/wallpapers` — غير كتكتب `y` ولا `n`.
+شغّل السكريبت من جلسة Plasma 6 مفتوحة. تحديث إعدادات Plasma كيعيد تشغيل `plasmashell`؛ إذا ما بانش الاختصار مباشرة، سجّل الخروج ثم الدخول.

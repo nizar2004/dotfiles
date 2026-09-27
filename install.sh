@@ -1,15 +1,97 @@
-#!/bin/sh
-set -e
+#!/bin/bash
+set -Eeuo pipefail
 
-# ANSI Color Codes
+# ── Graceful cleanup and error reporting ──────────────────────
+TEMP_DIR=""
+SPINNER_PID=""
+
+cleanup() {
+    if [[ -n "$SPINNER_PID" ]]; then
+        kill "$SPINNER_PID" 2>/dev/null || true
+        wait "$SPINNER_PID" 2>/dev/null || true
+        SPINNER_PID=""
+    fi
+    if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+        rm -rf -- "$TEMP_DIR" 2>/dev/null || true
+    fi
+}
+
+handle_error() {
+    local status=$?
+    stop_spinner ""
+    printf "\n  %b✕%b Installer stopped at line %s (exit %s): %s\n" \
+        "$C_RED$C_BOLD" "$C_RESET" "$1" "$status" "$2" >&2
+    exit "$status"
+}
+
+cancelled() {
+    stop_spinner ""
+    printf "\n  %b✕%b %bCancelled by user%b\n\n" "$C_RED$C_BOLD" "$C_RESET" "$C_DIM" "$C_RESET"
+    exit 130
+}
+trap cleanup EXIT
+trap cancelled SIGINT TERM
+trap 'handle_error "$LINENO" "$BASH_COMMAND"' ERR
+
+# ── ANSI Colors & Styles ──────────────────────────────────────
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
+C_DIM='\033[2m'
 C_CYAN='\033[1;36m'
 C_MAGENTA='\033[1;35m'
 C_GREEN='\033[1;32m'
+C_YELLOW='\033[1;33m'
 C_WHITE='\033[1;37m'
 C_GRAY='\033[0;90m'
+C_RED='\033[1;31m'
 
+# ── Progress Bar ──────────────────────────────────────────────
+TOTAL_STEPS=6
+current_step=0
+
+draw_progress() {
+    ((current_step += 1))
+    local filled=$((current_step * 30 / TOTAL_STEPS))
+    local empty=$((30 - filled))
+    local bar=""
+    local i
+    
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=0; i<empty; i++)); do bar+="░"; done
+    
+    local pct=$((current_step * 100 / TOTAL_STEPS))
+    printf "\r  %b[%s]%b %b%3d%%%b" "$C_CYAN" "$bar" "$C_RESET" "$C_BOLD" "$pct" "$C_RESET"
+}
+
+# ── Robust Spinner ────────────────────────────────────────────
+stop_spinner() {
+    if [[ -n "$SPINNER_PID" ]]; then
+        kill "$SPINNER_PID" 2>/dev/null || true
+        wait "$SPINNER_PID" 2>/dev/null || true
+        SPINNER_PID=""
+    fi
+
+    if [[ -z "$1" ]]; then
+        printf "\r%*s\r" 80 ""
+    else
+        printf "\r  %b✔%b  %s\n" "$C_GREEN$C_BOLD" "$C_RESET" "$1"
+    fi
+}
+
+start_spinner() {
+    stop_spinner ""
+    (
+        frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+        i=0
+        while true; do
+            printf "\r  %b%s%b %s" "$C_YELLOW" "${frames[$((i++ % 10))]}" "$C_RESET" "$1" > /dev/tty
+            sleep 0.08
+        done
+    ) 2>/dev/null &
+    SPINNER_PID=$!
+}
+
+# ── Print Helpers ─────────────────────────────────────────────
 print_banner() {
     clear
     printf "%b" "${C_MAGENTA}${C_BOLD}"
@@ -19,11 +101,12 @@ print_banner() {
   │   ███╗  ██╗██╗███████╗██████╗ ██████╗                      │
   │   ████╗ ██║██║╚══███╔╝██╔══██╗██╔══██╗                     │
   │   ██╔██╗██║██║  ███╔╝ ███████║██████╔╝                     │
-  │   ██║╚██╗██║██║ ███╔╝  ██╔══██║██╔══██╗                    │
-  │   ██║ ╚████║██║███████║██║  ██║██║  ██║                    │
-  │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                    │
+  │   ██║╚██╗██║██║ ███╔╝  ██╔══██║██╔══██╗                     │
+  │   ██║ ╚████║██║███████║██║  ██║██║  ██║                     │
+  │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                     │
   │                                                            │
-  │                ✦ ARCH LINUX • KDE PLASMA ✦                 │
+  │              ✦  ARCH LINUX · KDE PLASMA  ✦                 │
+  │                       by Nizar                             │
   │                                                            │
   ╰────────────────────────────────────────────────────────────╯
 BANNER
@@ -31,133 +114,150 @@ BANNER
 }
 
 step() {
-    printf "\n%b[ Step %s ]%b %b%s%b\n" "${C_CYAN}${C_BOLD}" "$1" "${C_RESET}" "${C_WHITE}${C_BOLD}" "$2" "${C_RESET}"
+    stop_spinner ""
+    printf "\n"
+    draw_progress
+    printf "\n  %b┌─%b %b[%s]%b %b%s%b\n" "$C_CYAN" "$C_RESET" "$C_CYAN$C_BOLD" "$1" "$C_RESET" "$C_WHITE$C_BOLD" "$2" "$C_RESET"
 }
 
 sub() {
-    printf "  %b➜%b %s\n" "${C_MAGENTA}" "${C_RESET}" "$1"
+    printf "  %b│%b  %b➜%b %b%s%b\n" "$C_CYAN" "$C_RESET" "$C_MAGENTA" "$C_RESET" "$C_DIM" "$1" "$C_RESET"
 }
 
 success() {
-    printf "  %b✔%b %b%s%b\n" "${C_GREEN}${C_BOLD}" "${C_RESET}" "${C_GREEN}" "$1" "${C_RESET}"
+    printf "  %b│%b  %b✔%b %b%s%b\n" "$C_CYAN" "$C_RESET" "$C_GREEN$C_BOLD" "$C_RESET" "$C_GREEN" "$1" "$C_RESET"
 }
 
-print_banner
+info() {
+    printf "  %b│%b  %b●%b %b%s%b\n" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_GRAY" "$1" "$C_RESET"
+}
 
-# Step 1: System Packages 
-step "1/7" "Synchronizing System Packages & Widgets"
-sub "Installing discord, papirus-icon-theme, Vertical Clock Widget, cargo, dbus..."
-sudo pacman -S --noconfirm --needed --quiet discord asusctl papirus-icon-theme base-devel git cargo pkgconf dbus >/dev/null 2>&1
-success "Essential packages ready"
+step_done() {
+    printf "  %b└─%b %bDone%b\n" "$C_CYAN" "$C_RESET" "$C_GREEN$C_BOLD" "$C_RESET"
+}
+
+# ── Main ──────────────────────────────────────────────────────
+print_banner
+printf "  %b●%b %bInitializing workspace restore...%b\n" "$C_CYAN" "$C_RESET" "$C_DIM" "$C_RESET"
+
+if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+    printf "Run this installer as your regular user, not as root. It will use sudo when needed.\n" >&2
+    exit 1
+fi
+command -v pacman >/dev/null
+command -v sudo >/dev/null
+if [[ ${KDE_SESSION_VERSION:-} != 6 ]]; then
+    printf "Run this installer from a logged-in KDE Plasma 6 session.\n" >&2
+    exit 1
+fi
+for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 plasmashell; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        printf "Required KDE command is missing: %s. Install or repair Plasma 6 first.\n" "$command_name" >&2
+        exit 1
+    fi
+done
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# Pre-authenticate sudo safely on the main thread
+printf "  %b⏳%b %bAuthenticating sudo (if required)...%b " "$C_YELLOW" "$C_RESET" "$C_DIM" "$C_RESET"
+sudo -v
+printf "%b✔%b\n" "$C_GREEN$C_BOLD" "$C_RESET"
+
+# Step 1
+step "1/6" "Synchronizing System Packages & Widgets"
+sub "Installing Discord, Asusctl, KDE applets, Chezmoi, and build tools..."
+sudo pacman -Syu --noconfirm --needed asusctl base-devel chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf rust
+stop_spinner "Essential packages ready"
 
 sub "Fetching Vertical Clock repository..."
-TEMP_CLOCK_DIR=$(mktemp -d)
-git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_CLOCK_DIR"
+TEMP_DIR=$(mktemp -d)
+start_spinner "Cloning plasma-vertical-clock..."
+git clone --quiet https://github.com/Cyberbessa/plasma-vertical-clock.git "$TEMP_DIR/plasma-vertical-clock"
+stop_spinner "Repository cloned"
 
 sub "Registering Vertical Clock applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_CLOCK_DIR" >/dev/null 2>&1 || true
-rm -rf "$TEMP_CLOCK_DIR"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/plasma-vertical-clock/vertical-clock.plasmoid" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/plasma-vertical-clock/vertical-clock.plasmoid"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=""
 success "Vertical Clock widget installed"
 
-# Step 2: Advanced Separator Plasmoid
-step "2/7" "Installing Advanced Separator Widget"
-TEMP_WIDGET_DIR=$(mktemp -d)
-sub "Fetching widget repository..."
-git clone --quiet https://github.com/luisbocanegra/plasma-advanced-separator.git "$TEMP_WIDGET_DIR"
+sub "Installing Plasma Gnome Pager..."
+TEMP_DIR=$(mktemp -d)
+start_spinner "Cloning plasma-gnome-pager..."
+git clone --quiet https://github.com/KenanSalar/plasma-gnome-pager.git "$TEMP_DIR/plasma-gnome-pager"
+stop_spinner "Repository cloned"
+kpackagetool6 --type Plasma/Applet --install "$TEMP_DIR/plasma-gnome-pager/package" || \
+    kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_DIR/plasma-gnome-pager/package"
+rm -rf -- "$TEMP_DIR"
+TEMP_DIR=""
+success "Plasma Gnome Pager installed"
+step_done
 
-sub "Registering Plasma applet..."
-kpackagetool6 --type Plasma/Applet --install "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || \
-kpackagetool6 --type Plasma/Applet --upgrade "$TEMP_WIDGET_DIR" >/dev/null 2>&1 || true
-
-PLASMOID_TARGET="$HOME/.local/share/plasma/plasmoids/luisbocanegra.advanced_separator"
-mkdir -p "$PLASMOID_TARGET"
-cp -rf "$TEMP_WIDGET_DIR"/* "$PLASMOID_TARGET/"
-rm -rf "$TEMP_WIDGET_DIR"
-success "Advanced Separator widget installed"
-
-# Step 3: kdotool
-step "3/7" "Verifying System Utilities"
+# Step 2
+step "2/6" "Verifying System Utilities"
 if ! command -v kdotool >/dev/null 2>&1; then
     sub "Building kdotool from source..."
     TEMP_DIR=$(mktemp -d)
+    start_spinner "Cloning kdotool..."
     git clone --quiet https://github.com/jinliu/kdotool.git "$TEMP_DIR/kdotool"
-    cd "$TEMP_DIR/kdotool"
-    cargo build --release --quiet
-    sudo install -Dm755 target/release/kdotool /usr/local/bin/kdotool
-    cd - > /dev/null
-    rm -rf "$TEMP_DIR"
-    success "kdotool binary compiled"
-else
-    success "kdotool already present"
-fi
+    stop_spinner "Repository cloned"
 
-# Step 4: Dotfiles (Chezmoi Check & Install)
-step "4/7" "Applying Chezmoi Dotfiles"
+    start_spinner "Compiling with Rust (this may take a moment)..."
+    cargo build --quiet --release --manifest-path "$TEMP_DIR/kdotool/Cargo.toml"
+    install -Dm755 "$TEMP_DIR/kdotool/target/release/kdotool" "$HOME/.local/bin/kdotool"
+    rm -rf -- "$TEMP_DIR"
+    TEMP_DIR=""
+    stop_spinner "kdotool installed in ~/.local/bin"
+else
+    info "kdotool already present — skipping build"
+fi
+step_done
+
+# Step 3
+step "3/6" "Applying Chezmoi Dotfiles"
 sub "Stopping Plasmashell safely..."
 kquitapp6 plasmashell >/dev/null 2>&1 || true
 sleep 1
+success "Plasmashell stopped"
 
-if ! command -v chezmoi >/dev/null 2>&1; then
-    sub "Chezmoi not found. Installing chezmoi via pacman..."
-    sudo pacman -S --noconfirm --needed --quiet chezmoi >/dev/null 2>&1
-    success "Chezmoi installed"
-else
-    success "Chezmoi binary already present"
-fi
-
-CHEZMOI_SRC="$(chezmoi source-path 2>/dev/null || echo "$HOME/.local/share/chezmoi")"
+CHEZMOI_SRC="$(chezmoi source-path)"
 
 if [ -d "$CHEZMOI_SRC/.git" ]; then
-    sub "Dotfiles repository found. Pulling latest changes..."
-    # --rebase and --autostash prevents git from hanging on a merge message prompt
-    git -C "$CHEZMOI_SRC" pull --quiet --rebase --autostash || true
-    chezmoi apply --force >/dev/null 2>&1
-    success "Dotfiles updated and applied"
+    sub "Dotfiles repository found — pulling latest changes..."
+    start_spinner "Syncing dotfiles..."
+    git -C "$CHEZMOI_SRC" pull --ff-only
+    chezmoi apply --force
+    stop_spinner "Dotfiles updated and applied"
 else
-    sub "Dotfiles repository not found. Initializing and downloading..."
-    chezmoi init --apply --force nizar2004 >/dev/null 2>&1
-    success "Dotfiles initialized and applied"
+    sub "No dotfiles repository found — initializing..."
+    start_spinner "Cloning & applying dotfiles from nizar2004..."
+    chezmoi init --apply --force nizar2004
+    stop_spinner "Dotfiles initialized and applied"
 fi
+step_done
 
-# Step 5: Scripts & Shortcuts
-step "5/7" "Configuring Helpers & Hotkeys"
-mkdir -p "$HOME/.local/bin"
-sub "Fetching Discord toggle helper..."
-curl -fsLS https://raw.githubusercontent.com/nizar2004/dotfiles/main/toggle-discord.sh -o "$HOME/.local/bin/toggle-discord.sh"
-chmod +x "$HOME/.local/bin/toggle-discord.sh"
+# Step 4
+step "4/6" "Verifying Managed Helpers & Hotkeys"
+[[ -x "$HOME/.local/bin/toggle-discord.sh" ]]
+[[ -f "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop" ]]
+success "Discord helper and Meta+Shift+D shortcut applied from chezmoi"
+step_done
 
-sub "Creating application desktop entry..."
-mkdir -p "$HOME/.local/share/applications"
-cat << 'DESK' > "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop"
-[Desktop Entry]
-Type=Application
-Name=Toggle Discord
-Exec=$HOME/.local/bin/toggle-discord.sh
-Icon=discord
-NoDisplay=false
-StartupNotify=false
-DESK
-
-sub "Registering Meta+Shift+D shortcut service..."
-pkill -9 kglobalaccel6 || true
-KGLOBLALRC="$HOME/.config/kglobalshortcutsrc"
-sed -i '/net.local.toggle-discord/d' "$KGLOBLALRC" 2>/dev/null || true
-echo "" >> "$KGLOBLALRC"
-echo "[services][net.local.toggle-discord.sh.desktop]" >> "$KGLOBLALRC"
-echo "_launch=Meta+Shift+D" >> "$KGLOBLALRC"
-success "Shortcuts & helper scripts active"
-
-# Step 6: Reload desktop daemons
-step "6/7" "Restoring KDE Plasma Environment"
+# Step 5
+step "5/6" "Restoring KDE Plasma Environment"
 sub "Updating system service cache..."
-kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
-sub "Restarting Plasmashell..."
-kstart plasmashell >/dev/null 2>&1 &
-success "Desktop environment fully reloaded"
+kbuildsycoca6 --noincremental
+success "Service cache rebuilt"
 
-# Step 7: Create 'backup' command utility
-step "7/7" "Setting up 'backup' command utility"
+sub "Restarting Plasmashell..."
+plasmashell --replace >/dev/null 2>&1 &
+success "Desktop environment reloaded"
+step_done
+
+# Step 6
+step "6/6" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh
@@ -171,72 +271,17 @@ chezmoi re-add
 echo "Committing and pushing to GitHub..."
 cd "$CHEZMOI_SRC"
 
-if git diff-index --quiet HEAD --; then
+git add -- .
+if git diff --cached --quiet; then
     echo "No new changes to backup."
     exit 0
 fi
 
-git add .
 git commit -m "Auto-backup workspace: $(date +'%Y-%m-%d %H:%M:%S')"
-git push origin main
+git push
 
 echo "✔ Successfully backed up to GitHub!"
 EOF
 chmod +x "$HOME/.local/bin/backup"
-success "'backup' command is now active"
-
-# Interactive: Install Necessary Apps
-printf "\n"
-printf "\033[1;36mDo you want to install your necessary apps? (y/N): \033[0m"
-if read -r REPLY </dev/tty; then
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            sub "Installing necessary apps..."
-            sudo pacman -S --noconfirm --needed --quiet asusctl >/dev/null 2>&1
-            success "Completed!"
-            ;;
-        *)
-            sub "Skipping install necessary apps."
-            ;;
-    esac
-else
-    sub "Skipping install necessary apps."
-fi
-
-# Interactive Wallpaper Prompt
-printf "\n"
-printf "\033[1;36mDo you want to clone Catppuccin Mocha wallpapers to ~/Pictures/wallpapers? (y/N): \033[0m"
-if read -r REPLY </dev/tty; then
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            WALLPAPER_DIR="$HOME/Pictures/wallpapers"
-            if [ -d "$WALLPAPER_DIR/.git" ]; then
-                sub "Updating Catppuccin Mocha wallpapers repository..."
-                git -C "$WALLPAPER_DIR" pull --progress
-                success "Wallpapers repository updated"
-            else
-                mkdir -p "$HOME/Pictures"
-                rm -rf "$WALLPAPER_DIR"
-                sub "Cloning Catppuccin Mocha wallpapers (showing live download progress)..."
-                git clone --depth 1 --progress https://github.com/orangci/walls-catppuccin-mocha.git "$WALLPAPER_DIR"
-                success "Wallpapers repository cloned"
-            fi
-            ;;
-        *)
-            sub "Skipping wallpaper repository setup."
-            ;;
-    esac
-else
-    sub "Skipping wallpaper repository setup."
-fi
-
-# Completion Banner
-printf "\n%b" "${C_GREEN}${C_BOLD}"
-cat << 'BANNER'
-  ╭────────────────────────────────────────────────────────────╮
-  │                                                            │
-  │   ✨  RESTORE COMPLETE! WORKSPACE READY, NIZAR.  ✨        │
-  │                                                            │
-  ╰────────────────────────────────────────────────────────────╯
-BANNER
-printf "%b\n" "${C_RESET}"
+success "'backup' command is now available at ~/.local/bin/backup"
+step_done
