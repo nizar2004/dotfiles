@@ -42,3 +42,9 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 - كيطّبق إعدادات الاختصارات والـ Discord helper، وكيجهّز أمر `backup`.
 
 شغّل السكريبت من جلسة Plasma 6 مفتوحة. تحديث إعدادات Plasma كيعيد تشغيل `plasmashell`؛ إذا ما بانش الاختصار مباشرة، سجّل الخروج ثم الدخول.
+
+
+## Achno nawi ndir mn ba3d 
+- 1 : bari ndir wa7ad list ta3 apps li bari n2instalihom dima , b7al `ROG Controle Center`...
+- 2 : bari mn ba3d ndir wa7ad select ta3 lapps bach nab9a nselecti lapps li barihom 
+- 3 : clone llist ta3 wallpapers li ikono fnafs repo dyali , machi frepo akhra
