@@ -206,7 +206,7 @@ immutability=1
 plugin=org.kde.plasma.icon
 
 [Containments][45][Applets][46][Configuration]
-localPath=/home/test/.local/share/plasma_icons/discord.desktop
+localPath=/home/nizar/.local/share/plasma_icons/discord.desktop
 url=file:///usr/share/applications/discord.desktop
 
 [Containments][45][Applets][48]
@@ -219,17 +219,10 @@ popupHeight=400
 popupWidth=560
 url=file:///usr/share/applications/Clash Verge.desktop
 
-[Containments][45][Applets][67]
-immutability=1
-plugin=org.kde.plasma.icon
-
-[Containments][45][Applets][67][Configuration]
-localPath=/home/test/.local/share/plasma_icons/steam.desktop
-url=desktop:/steam.desktop
-
 [Containments][45][Applets][68]
 immutability=1
 plugin=org.kde.plasma.icon
+transient=true
 
 [Containments][45][Applets][68][Configuration]
 localPath=/home/nizar/.local/share/plasma_icons/code.desktop
@@ -237,19 +230,43 @@ popupHeight=400
 popupWidth=560
 url=file:///usr/share/applications/code.desktop
 
-[Containments][45][General]
-AppletOrder=46;67;68;48
+[Containments][45][Applets][72]
+immutability=1
+plugin=org.kde.plasma.icon
 
-[Containments][70]
-ItemGeometries-1088x671=
+[Containments][45][Applets][72][Configuration]
+localPath=/home/nizar/.local/share/plasma_icons/steam (1).desktop
+url=desktop:/steam.desktop
+
+[Containments][45][Applets][73]
+immutability=1
+plugin=org.kde.plasma.icon
+
+[Containments][45][Applets][73][Configuration]
+localPath=/home/nizar/.local/share/plasma_icons/com.microsoft.VSCode.desktop
+url=file:///usr/share/applications/com.microsoft.VSCode.desktop
+
+[Containments][45][General]
+AppletOrder=46;72;73;48
+
+[Containments][71]
+ItemGeometries-1766x1103=
 ItemGeometriesHorizontal=
-activityId=0a47d7f1-fb5c-47bd-910d-dfc341165f94
+activityId=bfbef5d2-c736-450f-b676-e57f4af807d9
 formfactor=0
 immutability=1
 lastScreen=0
 location=0
 plugin=org.kde.plasma.folder
-wallpaperplugin=org.kde.image
+wallpaperplugin=org.kde.slideshow
+
+[Containments][71][ConfigDialog]
+DialogHeight=630
+DialogWidth=810
+
+[Containments][71][Wallpaper][org.kde.slideshow][General]
+Image=file:///home/nizar/Pictures/Wallpapers/Gemini_Generated_Image_5ky3kn5ky3kn5ky3(1).jpg
+SlidePaths=/home/nizar/Pictures/Wallpapers/
 
 [ScreenMapping]
 itemsOnDisabledScreens=
