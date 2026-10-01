@@ -37,6 +37,7 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 
 ## شنو كيدير السكريبت؟
 - كيدير تحديث للنظام وكيثبّت `Discord`، `Asusctl`، `KDE Connect`، `Materia KDE`، `Papirus`، وملحقات Plasma وأدوات البناء.
+- كيعطيك الاختيار تثبّت `ROG Control Center` و`Floorp` من AUR، بوحدهم أو بجوج.
 - كيثبّت ويدجت Vertical Clock وPlasma Gnome Pager، وكيسترجع إعدادات Plasma والـ Advanced Separator من ملفات Chezmoi.
 - كيبني `kdotool` إلا ما كانش مثبت.
 - كيطّبق إعدادات الاختصارات والـ Discord helper، وكيجهّز أمر `backup`.
@@ -45,6 +46,5 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 
 
 ## Achno nawi ndir mn ba3d 
-- 1 : bari ndir wa7ad select ta3 lapps bach nab9a nselecti lapps li barihom
-- 2 : bari mn ba3d ndir wa7ad list ta3 apps li bari n2instalihom dima , b7al `ROG Controle Center` `Easyeffects` `Grub customizer` ...
-- 3 : clone llist ta3 wallpapers li ikono fnafs repo dyali , machi frepo akhra
+- 1 : nzid apps okhrin llista ta3 lapps li n9der nkhtarhom, b7al `EasyEffects` w`Grub Customizer`
+- 2 : clone llist ta3 wallpapers li ikono fnafs repo dyali , machi frepo akhra

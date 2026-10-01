@@ -46,7 +46,7 @@ C_GRAY='\033[0;90m'
 C_RED='\033[1;31m'
 
 # ── Progress Bar ──────────────────────────────────────────────
-TOTAL_STEPS=6
+TOTAL_STEPS=7
 current_step=0
 
 draw_progress() {
@@ -96,19 +96,10 @@ print_banner() {
     clear
     printf "%b" "${C_MAGENTA}${C_BOLD}"
     cat << 'BANNER'
-  ╭────────────────────────────────────────────────────────────╮
-  │                                                            │
-  │   ███╗  ██╗██╗███████╗██████╗ ██████╗                      │
-  │   ████╗ ██║██║╚══███╔╝██╔══██╗██╔══██╗                     │
-  │   ██╔██╗██║██║  ███╔╝ ███████║██████╔╝                     │
-  │   ██║╚██╗██║██║ ███╔╝  ██╔══██║██╔══██╗                     │
-  │   ██║ ╚████║██║███████║██║  ██║██║  ██║                     │
-  │   ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝                     │
-  │                                                            │
-  │              ✦  ARCH LINUX · KDE PLASMA  ✦                 │
-  │                       by Nizar                             │
-  │                                                            │
-  ╰────────────────────────────────────────────────────────────╯
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃  NIZAR  /  WORKSTATION RESTORE                            ┃
+    ┃  ARCH LINUX  ·  KDE PLASMA 6                              ┃
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 BANNER
     printf "%b\n" "${C_RESET}"
 }
@@ -165,7 +156,7 @@ sudo -v
 printf "%b✔%b\n" "$C_GREEN$C_BOLD" "$C_RESET"
 
 # Step 1
-step "1/6" "Synchronizing System Packages & Widgets"
+step "1/7" "Synchronizing System Packages & Widgets"
 sub "Installing Discord, Asusctl, KDE applets, Chezmoi, and build tools..."
 sudo pacman -Syu --noconfirm --needed asusctl base-devel chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf rust
 stop_spinner "Essential packages ready"
@@ -196,7 +187,75 @@ success "Plasma Gnome Pager installed"
 step_done
 
 # Step 2
-step "2/6" "Verifying System Utilities"
+step "2/7" "Select Optional Applications"
+optional_apps=("ROG Control Center|rog-control-center" "Floorp|floorp-bin")
+selected_packages=()
+
+printf "  %b│%b  Optional apps are built from the Arch User Repository (AUR).\n" "$C_CYAN" "$C_RESET"
+for app_index in "${!optional_apps[@]}"; do
+    IFS='|' read -r app_name app_package <<< "${optional_apps[$app_index]}"
+    printf "  %b│%b  %b%d)%b %s\n" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$((app_index + 1))" "$C_RESET" "$app_name"
+done
+
+if [[ -r /dev/tty ]]; then
+    while true; do
+        printf "  %b│%b  Choose numbers separated by commas, 'all', or press Enter to skip: " "$C_CYAN" "$C_RESET"
+        IFS= read -r app_choice </dev/tty || app_choice=""
+        if [[ -z "$app_choice" ]]; then
+            break
+        elif [[ "${app_choice,,}" == "all" ]]; then
+            for app_entry in "${optional_apps[@]}"; do
+                IFS='|' read -r app_name app_package <<< "$app_entry"
+                selected_packages+=("$app_package")
+            done
+            break
+        fi
+
+        IFS=',' read -r -a app_choices <<< "$app_choice"
+        valid_choice=true
+        chosen_packages=()
+        for app_index in "${app_choices[@]}"; do
+            app_index="${app_index//[[:space:]]/}"
+            if [[ ! "$app_index" =~ ^[0-9]+$ ]]; then
+                valid_choice=false
+                break
+            fi
+            app_index_value=$((10#$app_index))
+            if (( app_index_value < 1 || app_index_value > ${#optional_apps[@]} )); then
+                valid_choice=false
+                break
+            fi
+            IFS='|' read -r app_name app_package <<< "${optional_apps[$((app_index_value - 1))]}"
+            chosen_packages+=("$app_package")
+        done
+
+        if [[ "$valid_choice" == true ]]; then
+            selected_packages=("${chosen_packages[@]}")
+            break
+        fi
+        printf "  %b│%b  %bInvalid selection. Enter listed numbers, 'all', or press Enter to skip.%b\n" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET"
+    done
+else
+    info "No interactive terminal available; skipping optional apps"
+fi
+
+if (( ${#selected_packages[@]} == 0 )); then
+    info "No optional apps selected"
+else
+    for app_package in "${selected_packages[@]}"; do
+        sub "Building $app_package from the AUR..."
+        TEMP_DIR=$(mktemp -d)
+        git clone --quiet "https://aur.archlinux.org/${app_package}.git" "$TEMP_DIR/$app_package"
+        (cd "$TEMP_DIR/$app_package" && makepkg --syncdeps --install --noconfirm)
+        rm -rf -- "$TEMP_DIR"
+        TEMP_DIR=""
+        success "$app_package installed"
+    done
+fi
+step_done
+
+# Step 3
+step "3/7" "Verifying System Utilities"
 if ! command -v kdotool >/dev/null 2>&1; then
     sub "Building kdotool from source..."
     TEMP_DIR=$(mktemp -d)
@@ -215,8 +274,8 @@ else
 fi
 step_done
 
-# Step 3
-step "3/6" "Applying Chezmoi Dotfiles"
+# Step 4
+step "4/7" "Applying Chezmoi Dotfiles"
 sub "Stopping Plasmashell safely..."
 kquitapp6 plasmashell >/dev/null 2>&1 || true
 sleep 1
@@ -238,15 +297,15 @@ else
 fi
 step_done
 
-# Step 4
-step "4/6" "Verifying Managed Helpers & Hotkeys"
+# Step 5
+step "5/7" "Verifying Managed Helpers & Hotkeys"
 [[ -x "$HOME/.local/bin/toggle-discord.sh" ]]
 [[ -f "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop" ]]
 success "Discord helper and Meta+Shift+D shortcut applied from chezmoi"
 step_done
 
-# Step 5
-step "5/6" "Restoring KDE Plasma Environment"
+# Step 6
+step "6/7" "Restoring KDE Plasma Environment"
 sub "Updating system service cache..."
 kbuildsycoca6 --noincremental
 success "Service cache rebuilt"
@@ -256,8 +315,8 @@ plasmashell --replace >/dev/null 2>&1 &
 success "Desktop environment reloaded"
 step_done
 
-# Step 6
-step "6/6" "Setting up 'backup' command utility"
+# Step 7
+step "7/7" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh
