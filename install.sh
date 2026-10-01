@@ -94,14 +94,17 @@ start_spinner() {
 # ── Print Helpers ─────────────────────────────────────────────
 print_banner() {
     clear
-    printf "%b" "${C_MAGENTA}${C_BOLD}"
+    printf "%b" "${C_CYAN}${C_BOLD}"
     cat << 'BANNER'
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃  NIZAR  /  WORKSTATION RESTORE                            ┃
-    ┃  ARCH LINUX  ·  KDE PLASMA 6                              ┃
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  ╭────────────────────────────────────────────────────────────╮
+  │                                                            │
+  │  NIZAR                                          RESTORE    │
+  │  ARCH LINUX  /  KDE PLASMA 6                              │
+  │                                                            │
+  ╰────────────────────────────────────────────────────────────╯
 BANNER
-    printf "%b\n" "${C_RESET}"
+    printf "%b" "${C_RESET}"
+    printf "  %bPersonal setup, restored with care.%b\n\n" "$C_DIM" "$C_RESET"
 }
 
 step() {
@@ -125,6 +128,103 @@ info() {
 
 step_done() {
     printf "  %b└─%b %bDone%b\n" "$C_CYAN" "$C_RESET" "$C_GREEN$C_BOLD" "$C_RESET"
+}
+
+select_optional_apps() {
+    local app_count=${#optional_app_names[@]}
+    local focus_index=0
+    local row_count=$((app_count + 3))
+    local rendered=false
+    local all_selected key next_key
+    local app_index
+    local -a selected_flags=()
+
+    for ((app_index = 0; app_index < app_count; app_index++)); do
+        selected_flags+=(false)
+    done
+
+    while true; do
+        if [[ "$rendered" == true ]]; then
+            printf "\033[%dA\033[J" "$row_count" > /dev/tty
+        fi
+
+        printf "  %b│%b  %bChoose optional applications%b\n" "$C_CYAN" "$C_RESET" "$C_WHITE$C_BOLD" "$C_RESET" > /dev/tty
+        for ((app_index = 0; app_index < app_count; app_index++)); do
+            local marker=' '
+            local pointer=' '
+            if [[ "${selected_flags[$app_index]}" == true ]]; then
+                marker='✓'
+            fi
+            if (( focus_index == app_index )); then
+                pointer='›'
+            fi
+            printf "  %b%s%b  [%b%s%b]  %s\n" "$C_CYAN$C_BOLD" "$pointer" "$C_RESET" "$C_GREEN$C_BOLD" "$marker" "$C_RESET" "${optional_app_names[$app_index]}" > /dev/tty
+        done
+
+        all_selected=true
+        for app_index in "${selected_flags[@]}"; do
+            if [[ "$app_index" != true ]]; then
+                all_selected=false
+                break
+            fi
+        done
+        local all_marker=' '
+        local all_pointer=' '
+        if [[ "$all_selected" == true ]]; then
+            all_marker='✓'
+        fi
+        if (( focus_index == app_count )); then
+            all_pointer='›'
+        fi
+        printf "  %b%s%b  [%b%s%b]  %bSelect all%b\n" "$C_CYAN$C_BOLD" "$all_pointer" "$C_RESET" "$C_GREEN$C_BOLD" "$all_marker" "$C_RESET" "$C_WHITE$C_BOLD" "$C_RESET" > /dev/tty
+        printf "  %b↑/↓ move   Space toggle   Enter confirm%b\n" "$C_DIM" "$C_RESET" > /dev/tty
+        rendered=true
+
+        if ! IFS= read -r -s -n1 key </dev/tty; then
+            break
+        fi
+        case "$key" in
+            $'\e')
+                if IFS= read -r -s -n1 -t 0.1 next_key </dev/tty && [[ "$next_key" == "[" ]]; then
+                    if IFS= read -r -s -n1 -t 0.1 next_key </dev/tty; then
+                        case "$next_key" in
+                            A) (( focus_index > 0 )) && ((focus_index -= 1)) || true ;;
+                            B) (( focus_index < app_count )) && ((focus_index += 1)) || true ;;
+                        esac
+                    fi
+                fi
+                ;;
+            k) (( focus_index > 0 )) && ((focus_index -= 1)) || true ;;
+            j) (( focus_index < app_count )) && ((focus_index += 1)) || true ;;
+            ' ')
+                if (( focus_index == app_count )); then
+                    if [[ "$all_selected" == true ]]; then
+                        for ((app_index = 0; app_index < app_count; app_index++)); do
+                            selected_flags[$app_index]=false
+                        done
+                    else
+                        for ((app_index = 0; app_index < app_count; app_index++)); do
+                            selected_flags[$app_index]=true
+                        done
+                    fi
+                elif [[ "${selected_flags[$focus_index]}" == true ]]; then
+                    selected_flags[$focus_index]=false
+                else
+                    selected_flags[$focus_index]=true
+                fi
+                ;;
+            '')
+                selected_packages=()
+                for ((app_index = 0; app_index < app_count; app_index++)); do
+                    if [[ "${selected_flags[$app_index]}" == true ]]; then
+                        selected_packages+=("${optional_app_packages[$app_index]}")
+                    fi
+                done
+                printf "\n" > /dev/tty
+                break
+                ;;
+        esac
+    done
 }
 
 # ── Main ──────────────────────────────────────────────────────
@@ -188,53 +288,13 @@ step_done
 
 # Step 2
 step "2/7" "Select Optional Applications"
-optional_apps=("ROG Control Center|rog-control-center" "Floorp|floorp-bin")
+optional_app_names=("ROG Control Center" "Floorp")
+optional_app_packages=("rog-control-center" "floorp-bin")
 selected_packages=()
 
-printf "  %b│%b  Optional apps are built from the Arch User Repository (AUR).\n" "$C_CYAN" "$C_RESET"
-for app_index in "${!optional_apps[@]}"; do
-    IFS='|' read -r app_name app_package <<< "${optional_apps[$app_index]}"
-    printf "  %b│%b  %b%d)%b %s\n" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$((app_index + 1))" "$C_RESET" "$app_name"
-done
-
-if [[ -r /dev/tty ]]; then
-    while true; do
-        printf "  %b│%b  Choose numbers separated by commas, 'all', or press Enter to skip: " "$C_CYAN" "$C_RESET"
-        IFS= read -r app_choice </dev/tty || app_choice=""
-        if [[ -z "$app_choice" ]]; then
-            break
-        elif [[ "${app_choice,,}" == "all" ]]; then
-            for app_entry in "${optional_apps[@]}"; do
-                IFS='|' read -r app_name app_package <<< "$app_entry"
-                selected_packages+=("$app_package")
-            done
-            break
-        fi
-
-        IFS=',' read -r -a app_choices <<< "$app_choice"
-        valid_choice=true
-        chosen_packages=()
-        for app_index in "${app_choices[@]}"; do
-            app_index="${app_index//[[:space:]]/}"
-            if [[ ! "$app_index" =~ ^[0-9]+$ ]]; then
-                valid_choice=false
-                break
-            fi
-            app_index_value=$((10#$app_index))
-            if (( app_index_value < 1 || app_index_value > ${#optional_apps[@]} )); then
-                valid_choice=false
-                break
-            fi
-            IFS='|' read -r app_name app_package <<< "${optional_apps[$((app_index_value - 1))]}"
-            chosen_packages+=("$app_package")
-        done
-
-        if [[ "$valid_choice" == true ]]; then
-            selected_packages=("${chosen_packages[@]}")
-            break
-        fi
-        printf "  %b│%b  %bInvalid selection. Enter listed numbers, 'all', or press Enter to skip.%b\n" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET"
-    done
+if [[ -r /dev/tty && -w /dev/tty ]]; then
+    printf "  %b│%b  Apps are built from the Arch User Repository (AUR).\n" "$C_CYAN" "$C_RESET"
+    select_optional_apps
 else
     info "No interactive terminal available; skipping optional apps"
 fi
