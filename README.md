@@ -21,7 +21,7 @@ This repository restores my saved KDE Plasma configuration and helper tools with
 
 ## ⚡ انسطالاسيون بكوموند وحدة
 ```bash
-bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotfiles/main/install.sh | bash'
+bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotfiles/test-branch/install.sh | bash'
 ```
 ## 🧱 شنو اللي لازم يكون عندك قبل ما تبدأ؟
 
@@ -45,6 +45,6 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 
 
 ## Achno nawi ndir mn ba3d 
-- 1 : bari ndir wa7ad list ta3 apps li bari n2instalihom dima , b7al `ROG Controle Center`...
-- 2 : bari mn ba3d ndir wa7ad select ta3 lapps bach nab9a nselecti lapps li barihom 
+- 1 : bari ndir wa7ad select ta3 lapps bach nab9a nselecti lapps li barihom
+- 2 : bari mn ba3d ndir wa7ad list ta3 apps li bari n2instalihom dima , b7al `ROG Controle Center` `Easyeffects` `Grub customizer` ...
 - 3 : clone llist ta3 wallpapers li ikono fnafs repo dyali , machi frepo akhra
