@@ -249,6 +249,7 @@ for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 kwriteconfig6 kreadcon
 done
 
 export PATH="$HOME/.local/bin:$PATH"
+DOTFILES_BRANCH="${DOTFILES_BRANCH:-test-branch}"
 
 # Pre-authenticate sudo safely on the main thread
 printf "  %b⏳%b %bAuthenticating sudo (if required)...%b " "$C_YELLOW" "$C_RESET" "$C_DIM" "$C_RESET"
@@ -340,15 +341,21 @@ success "Plasmashell stopped"
 CHEZMOI_SRC="$(chezmoi source-path)"
 
 if [ -d "$CHEZMOI_SRC/.git" ]; then
-    sub "Dotfiles repository found — pulling latest changes..."
+    sub "Dotfiles repository found — switching to $DOTFILES_BRANCH..."
     start_spinner "Syncing dotfiles..."
-    git -C "$CHEZMOI_SRC" pull --ff-only
+    git -C "$CHEZMOI_SRC" fetch origin "$DOTFILES_BRANCH"
+    if git -C "$CHEZMOI_SRC" show-ref --verify --quiet "refs/heads/$DOTFILES_BRANCH"; then
+        git -C "$CHEZMOI_SRC" switch "$DOTFILES_BRANCH"
+    else
+        git -C "$CHEZMOI_SRC" switch --track -c "$DOTFILES_BRANCH" "origin/$DOTFILES_BRANCH"
+    fi
+    git -C "$CHEZMOI_SRC" pull --ff-only origin "$DOTFILES_BRANCH"
     chezmoi apply --force
-    stop_spinner "Dotfiles updated and applied"
+    stop_spinner "Dotfiles from $DOTFILES_BRANCH updated and applied"
 else
     sub "No dotfiles repository found — initializing..."
     start_spinner "Cloning & applying dotfiles from nizar2004..."
-    chezmoi init --apply --force nizar2004
+    chezmoi init --apply --force --branch "$DOTFILES_BRANCH" nizar2004
     stop_spinner "Dotfiles initialized and applied"
 fi
 step_done
