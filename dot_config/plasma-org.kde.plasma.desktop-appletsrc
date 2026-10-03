@@ -129,7 +129,7 @@ DialogWidth=810
 
 [Containments][23][Applets][28][General]
 extraItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth
-hiddenItems=Arch-Update,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center,Cachy-Update,tray-icon tray app clash-verge-rev-tray
+hiddenItems=Arch-Update,org.kde.kdeconnect,org.kde.plasma.clipboard,org.kde.plasma.mediacontroller,org.kde.plasma.bluetooth,Easy Effects,ROG Control Center,Cachy-Update,tray-icon tray app clash-verge-rev-tray,ZapZap
 knownItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.plasma.bluetooth
 
 [Containments][23][Applets][39]
@@ -142,7 +142,7 @@ plugin=luisbocanegra.advanced_separator
 
 [Containments][23][Applets][58][Configuration][General]
 initialized=true
-lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#013eff","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":1}
+lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#b78e58","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":0}
 
 [Containments][23][Applets][59]
 immutability=1
@@ -168,9 +168,13 @@ plugin=org.kde.plasma.panelspacer
 immutability=1
 plugin=luisbocanegra.advanced_separator
 
+[Containments][23][Applets][63][Configuration][ConfigDialog]
+DialogHeight=630
+DialogWidth=810
+
 [Containments][23][Applets][63][Configuration][General]
 initialized=true
-lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#013eff","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":1}
+lineColor={"enabled":true,"lightness":0.5,"saturation":0.5,"alpha":1,"systemColor":"highlightColor","systemColorSet":"Window","custom":"#b78e58","list":["#ED8796","#A6DA95","#EED49F","#8AADF4","#F5BDE6","#8BD5CA","#f5a97f"],"saturationEnabled":false,"lightnessEnabled":false,"sourceType":0}
 
 [Containments][23][Applets][65]
 immutability=1
