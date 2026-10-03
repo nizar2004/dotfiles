@@ -187,11 +187,6 @@ DialogWidth=810
 [Containments][23][General]
 AppletOrder=24;58;65;63;26;62;59;61;27;28;39
 
-[Containments][4][Wallpaper][org.kde.image][General]
-Image=/usr/share/wallpapers/cachyos-wallpapers/north.png
-PreviewImage=/usr/share/wallpapers/cachyos-wallpapers/north.png
-SlidePaths=/usr/share/wallpapers/
-
 [Containments][45]
 activityId=
 formfactor=3

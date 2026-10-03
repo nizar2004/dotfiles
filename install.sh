@@ -360,17 +360,60 @@ plasma_config="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
 mkdir -p "$wallpaper_dir"
 cp -an "$CHEZMOI_SRC/Wallpapers/." "$wallpaper_dir/"
 
-for containment in 66 69; do
+first_wallpaper=$(find "$wallpaper_dir" -maxdepth 1 -type f \
+    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+    -print -quit)
+if [[ -z "$first_wallpaper" ]]; then
+    printf "No supported image files found in %s\n" "$wallpaper_dir" >&2
+    exit 1
+fi
+
+mapfile -t desktop_containments < <(awk '
+    function emit() {
+        if (in_root && formfactor == "0" && plugin == "org.kde.plasma.folder") {
+            print containment_id
+        }
+    }
+    /^\[Containments\]\[[0-9]+\]$/ {
+        emit()
+        containment_id = $0
+        sub(/^\[Containments\]\[/, "", containment_id)
+        sub(/\]$/, "", containment_id)
+        in_root = 1
+        plugin = ""
+        formfactor = ""
+        next
+    }
+    /^\[/ {
+        emit()
+        in_root = 0
+        next
+    }
+    in_root && /^plugin=/ {
+        plugin = substr($0, 8)
+    }
+    in_root && /^formfactor=/ {
+        formfactor = substr($0, 12)
+    }
+    END { emit() }
+' "$plasma_config")
+
+if (( ${#desktop_containments[@]} == 0 )); then
+    printf "Could not find any KDE desktop containments in %s\n" "$plasma_config" >&2
+    exit 1
+fi
+
+for containment in "${desktop_containments[@]}"; do
     kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
         --key wallpaperplugin org.kde.slideshow
     kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
         --group Wallpaper --group org.kde.slideshow --group General \
-        --key Image "file://$wallpaper_dir/Cat.jpg"
+        --key Image "file://$first_wallpaper"
     kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
         --group Wallpaper --group org.kde.slideshow --group General \
         --key SlidePaths "$wallpaper_dir/"
 done
-success "Wallpapers copied and slideshow enabled on both desktops"
+success "Using $(basename "$first_wallpaper") in the slideshow"
 step_done
 
 # Step 6
