@@ -358,6 +358,13 @@ else
     chezmoi init --apply --force --branch "$DOTFILES_BRANCH" nizar2004
     stop_spinner "Dotfiles initialized and applied"
 fi
+active_dotfiles_branch=$(git -C "$CHEZMOI_SRC" branch --show-current)
+if [[ "$active_dotfiles_branch" != "$DOTFILES_BRANCH" ]]; then
+    printf "Expected dotfiles branch %s, but found %s\n" \
+        "$DOTFILES_BRANCH" "$active_dotfiles_branch" >&2
+    exit 1
+fi
+success "Confirmed dotfiles branch: $active_dotfiles_branch"
 step_done
 
 # Step 5
