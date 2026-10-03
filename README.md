@@ -49,3 +49,4 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 ## Achno nawi ndir mn ba3d 
 - 1 : nzid apps okhrin llista ta3 lapps li n9der nkhtarhom, b7al `EasyEffects` w`Grub Customizer`
 - 2 : clone llist ta3 wallpapers li ikono fnafs repo dyali , machi frepo akhra
+- 3 : ankhali script iselecti lapps 9bal maybda idir khdamto

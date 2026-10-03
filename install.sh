@@ -241,7 +241,7 @@ if [[ ${KDE_SESSION_VERSION:-} != 6 ]]; then
     printf "Run this installer from a logged-in KDE Plasma 6 session.\n" >&2
     exit 1
 fi
-for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 kwriteconfig6 plasmashell; do
+for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 kwriteconfig6 kreadconfig6 plasmashell; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf "Required KDE command is missing: %s. Install or repair Plasma 6 first.\n" "$command_name" >&2
         exit 1
@@ -370,7 +370,7 @@ fi
 
 mapfile -t desktop_containments < <(awk '
     function emit() {
-        if (in_root && formfactor == "0" && plugin == "org.kde.plasma.folder") {
+        if (in_root && formfactor == "0") {
             print containment_id
         }
     }
@@ -380,7 +380,6 @@ mapfile -t desktop_containments < <(awk '
         sub(/^\[Containments\]\[/, "", containment_id)
         sub(/\]$/, "", containment_id)
         in_root = 1
-        plugin = ""
         formfactor = ""
         next
     }
@@ -388,9 +387,6 @@ mapfile -t desktop_containments < <(awk '
         emit()
         in_root = 0
         next
-    }
-    in_root && /^plugin=/ {
-        plugin = substr($0, 8)
     }
     in_root && /^formfactor=/ {
         formfactor = substr($0, 12)
@@ -412,8 +408,18 @@ for containment in "${desktop_containments[@]}"; do
     kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
         --group Wallpaper --group org.kde.slideshow --group General \
         --key SlidePaths "$wallpaper_dir/"
+
+    configured_plugin=$(kreadconfig6 --file "$plasma_config" --group Containments \
+        --group "$containment" --key wallpaperplugin)
+    configured_paths=$(kreadconfig6 --file "$plasma_config" --group Containments \
+        --group "$containment" --group Wallpaper --group org.kde.slideshow \
+        --group General --key SlidePaths)
+    if [[ "$configured_plugin" != org.kde.slideshow || "$configured_paths" != "$wallpaper_dir/" ]]; then
+        printf "Failed to configure the wallpaper slideshow for desktop %s\n" "$containment" >&2
+        exit 1
+    fi
 done
-success "Using $(basename "$first_wallpaper") in the slideshow"
+success "Using $(basename "$first_wallpaper") in the slideshow on ${#desktop_containments[@]} desktop(s)"
 step_done
 
 # Step 6
