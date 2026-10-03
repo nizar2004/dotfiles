@@ -252,8 +252,8 @@ DialogHeight=630
 DialogWidth=810
 
 [Containments][66][Wallpaper][org.kde.slideshow][General]
-Image=file:///home/nizar/Pictures/wallpapers/castle.png
-SlidePaths=/home/nizar/Pictures/wallpapers/
+Image=file:///home/nizar/Pictures/Wallpapers/Cat.jpg
+SlidePaths=/home/nizar/Pictures/Wallpapers/
 
 [Containments][69]
 activityId=2f294697-410c-4648-9672-83b8150f96de
@@ -262,7 +262,11 @@ immutability=1
 lastScreen=1
 location=0
 plugin=org.kde.plasma.folder
-wallpaperplugin=org.kde.image
+wallpaperplugin=org.kde.slideshow
+
+[Containments][69][Wallpaper][org.kde.slideshow][General]
+Image=file:///home/nizar/Pictures/Wallpapers/Cat.jpg
+SlidePaths=/home/nizar/Pictures/Wallpapers/
 
 [ScreenMapping]
 itemsOnDisabledScreens=

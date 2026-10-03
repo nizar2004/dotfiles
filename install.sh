@@ -46,7 +46,7 @@ C_GRAY='\033[0;90m'
 C_RED='\033[1;31m'
 
 # ── Progress Bar ──────────────────────────────────────────────
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 current_step=0
 
 draw_progress() {
@@ -99,7 +99,7 @@ print_banner() {
   ╭────────────────────────────────────────────────────────────╮
   │                                                            │
   │  NIZAR                                          RESTORE    │
-  │  ARCH LINUX  /  KDE PLASMA 6                              │
+  │  ARCH LINUX  /  KDE PLASMA 6                               │
   │                                                            │
   ╰────────────────────────────────────────────────────────────╯
 BANNER
@@ -241,7 +241,7 @@ if [[ ${KDE_SESSION_VERSION:-} != 6 ]]; then
     printf "Run this installer from a logged-in KDE Plasma 6 session.\n" >&2
     exit 1
 fi
-for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 plasmashell; do
+for command_name in kpackagetool6 kquitapp6 kbuildsycoca6 kwriteconfig6 plasmashell; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf "Required KDE command is missing: %s. Install or repair Plasma 6 first.\n" "$command_name" >&2
         exit 1
@@ -256,7 +256,7 @@ sudo -v
 printf "%b✔%b\n" "$C_GREEN$C_BOLD" "$C_RESET"
 
 # Step 1
-step "1/7" "Synchronizing System Packages & Widgets"
+step "1/8" "Synchronizing System Packages & Widgets"
 sub "Installing Discord, Asusctl, KDE applets, Chezmoi, and build tools..."
 sudo pacman -Syu --noconfirm --needed asusctl base-devel chezmoi curl dbus discord git kdeconnect kdeplasma-addons materia-kde papirus-icon-theme pkgconf rust
 stop_spinner "Essential packages ready"
@@ -287,13 +287,13 @@ success "Plasma Gnome Pager installed"
 step_done
 
 # Step 2
-step "2/7" "Select Optional Applications"
+step "2/8" "Select Optional Applications"
 optional_app_names=("ROG Control Center" "Floorp")
 optional_app_packages=("rog-control-center" "floorp-bin")
 selected_packages=()
 
 if [[ -r /dev/tty && -w /dev/tty ]]; then
-    printf "  %b│%b  Apps are built from the Arch User Repository (AUR).\n" "$C_CYAN" "$C_RESET"
+    printf "  %b│%b  Selected apps will be installed from your pacman repositories.\n" "$C_CYAN" "$C_RESET"
     select_optional_apps
 else
     info "No interactive terminal available; skipping optional apps"
@@ -303,19 +303,15 @@ if (( ${#selected_packages[@]} == 0 )); then
     info "No optional apps selected"
 else
     for app_package in "${selected_packages[@]}"; do
-        sub "Building $app_package from the AUR..."
-        TEMP_DIR=$(mktemp -d)
-        git clone --quiet "https://aur.archlinux.org/${app_package}.git" "$TEMP_DIR/$app_package"
-        (cd "$TEMP_DIR/$app_package" && makepkg --syncdeps --install --noconfirm)
-        rm -rf -- "$TEMP_DIR"
-        TEMP_DIR=""
+        sub "Installing $app_package with pacman..."
+        sudo pacman -S --noconfirm --needed "$app_package"
         success "$app_package installed"
     done
 fi
 step_done
 
 # Step 3
-step "3/7" "Verifying System Utilities"
+step "3/8" "Verifying System Utilities"
 if ! command -v kdotool >/dev/null 2>&1; then
     sub "Building kdotool from source..."
     TEMP_DIR=$(mktemp -d)
@@ -335,7 +331,7 @@ fi
 step_done
 
 # Step 4
-step "4/7" "Applying Chezmoi Dotfiles"
+step "4/8" "Applying Chezmoi Dotfiles"
 sub "Stopping Plasmashell safely..."
 kquitapp6 plasmashell >/dev/null 2>&1 || true
 sleep 1
@@ -358,14 +354,34 @@ fi
 step_done
 
 # Step 5
-step "5/7" "Verifying Managed Helpers & Hotkeys"
+step "5/8" "Installing Wallpaper Slideshow"
+wallpaper_dir="$HOME/Pictures/Wallpapers"
+plasma_config="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+mkdir -p "$wallpaper_dir"
+cp -an "$CHEZMOI_SRC/Wallpapers/." "$wallpaper_dir/"
+
+for containment in 66 69; do
+    kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
+        --key wallpaperplugin org.kde.slideshow
+    kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
+        --group Wallpaper --group org.kde.slideshow --group General \
+        --key Image "file://$wallpaper_dir/Cat.jpg"
+    kwriteconfig6 --file "$plasma_config" --group Containments --group "$containment" \
+        --group Wallpaper --group org.kde.slideshow --group General \
+        --key SlidePaths "$wallpaper_dir/"
+done
+success "Wallpapers copied and slideshow enabled on both desktops"
+step_done
+
+# Step 6
+step "6/8" "Verifying Managed Helpers & Hotkeys"
 [[ -x "$HOME/.local/bin/toggle-discord.sh" ]]
 [[ -f "$HOME/.local/share/applications/net.local.toggle-discord.sh.desktop" ]]
 success "Discord helper and Meta+Shift+D shortcut applied from chezmoi"
 step_done
 
-# Step 6
-step "6/7" "Restoring KDE Plasma Environment"
+# Step 7
+step "7/8" "Restoring KDE Plasma Environment"
 sub "Updating system service cache..."
 kbuildsycoca6 --noincremental
 success "Service cache rebuilt"
@@ -375,8 +391,8 @@ plasmashell --replace >/dev/null 2>&1 &
 success "Desktop environment reloaded"
 step_done
 
-# Step 7
-step "7/7" "Setting up 'backup' command utility"
+# Step 8
+step "8/8" "Setting up 'backup' command utility"
 mkdir -p "$HOME/.local/bin"
 cat << 'EOF' > "$HOME/.local/bin/backup"
 #!/bin/sh

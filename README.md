@@ -37,7 +37,8 @@ bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/nizar2004/dotf
 
 ## شنو كيدير السكريبت؟
 - كيدير تحديث للنظام وكيثبّت `Discord`، `Asusctl`، `KDE Connect`، `Materia KDE`، `Papirus`، وملحقات Plasma وأدوات البناء.
-- كيعطيك الاختيار تثبّت `ROG Control Center` و`Floorp` من AUR، بوحدهم أو بجوج.
+- كيعطيك الاختيار تثبّت `ROG Control Center` و`Floorp` عبر `pacman`، بوحدهم أو بجوج.
+- كينسخ الصور من `Wallpapers` لـ `~/Pictures/Wallpapers` وكيشغّلهم كـ slideshow فالشاشتين.
 - كيثبّت ويدجت Vertical Clock وPlasma Gnome Pager، وكيسترجع إعدادات Plasma والـ Advanced Separator من ملفات Chezmoi.
 - كيبني `kdotool` إلا ما كانش مثبت.
 - كيطّبق إعدادات الاختصارات والـ Discord helper، وكيجهّز أمر `backup`.
